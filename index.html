@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GeoEditor V23 – Chameleon AI & Maps Fix</title>
+<title>GeoEditor V32 – Final Stable Edition</title>
 <script src="https://cdn.jsdelivr.net/npm/piexifjs"></script>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -18,7 +18,7 @@
     #canvasContainer { width: 100%; height: 100%; overflow: auto; border: 2px solid var(--panel-light); box-shadow: 0 0 30px rgba(0,0,0,0.5); background: #1e293b; text-align: center; position: relative;}
     canvas { display: inline-block; vertical-align: top; box-shadow: 0 0 20px rgba(0,0,0,0.8); cursor: crosshair; }
     
-    #eraserCursor { position: fixed; border: 2px solid white; box-shadow: 0 0 5px black, inset 0 0 5px black; border-radius: 50%; pointer-events: none; display: none; transform: translate(-50%, -50%); z-index: 9999;}
+    #eraserCursor { position: absolute; border: 2px solid white; box-shadow: 0 0 5px black, inset 0 0 5px black; border-radius: 50%; pointer-events: none; display: none; transform: translate(-50%, -50%); z-index: 9999;}
     
     h2, h3 { margin: 0; color: var(--acc); }
     h2 { font-size: 1.4rem; text-align: center; margin-bottom: 5px; }
@@ -44,7 +44,7 @@
     .btn-outline:hover { background: var(--panel-light); }
 
     .toolbar { display: flex; gap: 5px; margin-bottom: 10px; }
-    .tool-btn { flex: 1; padding: 10px; font-size: 0.8rem; border: 2px solid transparent; }
+    .tool-btn { flex: 1; padding: 8px; font-size: 0.75rem; border: 2px solid transparent; }
     .tool-btn.active-patch { border-color: var(--acc); background: rgba(59, 130, 246, 0.2); }
     .tool-btn.active-eraser { border-color: var(--purple); background: rgba(168, 85, 247, 0.2); }
     .tool-btn.active-chameleon { border-color: var(--gold); background: rgba(245, 158, 11, 0.2); }
@@ -71,7 +71,7 @@
 <body>
 
 <div class="sidebar">
-    <h2>🛠️ GeoEditor V23 <span style="font-size:0.8rem; font-weight:normal">Chameleon AI</span></h2>
+    <h2>🛠️ GeoEditor V32 <span style="font-size:0.8rem; font-weight:normal">Master Edition</span></h2>
     
     <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px;">
         <label class="btn btn-primary" style="flex: 2; padding: 10px; margin: 0;">📂 1. Carica Foto<input type="file" id="upload" accept="image/*" style="display: none;"></label>
@@ -83,18 +83,24 @@
 
     <h3>RIMOZIONE (FASE 1)</h3>
     <div class="toolbar">
-        <button class="btn tool-btn active-patch" id="toolPatch" onclick="setTool('patch')">🩹 Toppa</button>
-        <button class="btn tool-btn btn-purple" id="toolEraser" onclick="setTool('eraser')">✨ Gomma</button>
-        <button class="btn tool-btn btn-gold" id="toolChameleon" onclick="setTool('chameleon')">🦎 Camaleonte</button>
+        <button class="btn tool-btn active-patch" id="toolPatch" onclick="setTool('patch')">🩹 Toppa<br>(Manuale)</button>
+        <button class="btn tool-btn btn-purple" id="toolEraser" onclick="setTool('eraser')">✨ Gomma<br>(Mangia-Bianco)</button>
+        <button class="btn tool-btn btn-gold" id="toolChameleon" onclick="setTool('chameleon')">🦎 Camaleonte<br>(Auto-Clone)</button>
     </div>
 
     <div class="panel-section" id="panelChameleon" style="display:none">
-        <h3 style="color:var(--gold)">Auto-Riempimento IA</h3>
-        <p style="font-size: 0.75rem; color: #cbd5e1; margin: 5px 0;">Disegna un riquadro sul testo. Verrà generata una texture fondendo i bordi esterni.</p>
+        <h3 style="color:var(--gold)">Toppa Intelligente (Auto-Clone)</h3>
+        <p style="font-size: 0.75rem; color: #cbd5e1; margin: 5px 0;">Disegna un riquadro sul testo. Il sistema clonerà automaticamente l'area adiacente creando un livello toppa.</p>
         <div class="fx-grid">
-            <label class="span-2">Ruvidità Superficie (Noise): <span id="valChamNoise">25</span><input type="range" id="chamNoise" min="0" max="80" value="25" title="Aumenta per asfalto/ghiaia, abbassa per muri lisci"></label>
+            <label class="span-2">Copia Texture da:
+                <select id="chamDirection">
+                    <option value="top">⬆️ Sopra (Ideale per asfalto/muri)</option>
+                    <option value="bottom">⬇️ Sotto</option>
+                    <option value="left">⬅️ Sinistra</option>
+                    <option value="right">➡️ Destra</option>
+                </select>
+            </label>
         </div>
-        <button class="btn btn-outline" id="btnClearChameleon">Annulla effetti Camaleonte/Gomma</button>
     </div>
 
     <div class="panel-section" id="panelEraser" style="display:none">
@@ -102,17 +108,17 @@
         <div class="fx-grid">
             <label class="span-2">Pennello: <span id="valBrushSize">40px</span><input type="range" id="brushSize" min="5" max="200" value="40"></label>
             <label>Sens. Bianco: <span id="valTolWhite">180</span><input type="range" id="tolWhite" min="100" max="255" value="180"></label>
-            <label>Allarga (Bordo): <span id="valExpand">4px</span><input type="range" id="expandOutline" min="0" max="15" value="4"></label>
+            <label>Allarga Bordo: <span id="valExpand">4px</span><input type="range" id="expandOutline" min="0" max="15" value="4"></label>
         </div>
-        <button class="btn btn-outline" id="btnClearEraser">Annulla effetti Gomma</button>
+        <button class="btn btn-outline" id="btnClearEraser" style="margin-top: 5px;">Cancella effetti Gomma</button>
     </div>
 
     <div class="panel-section active" id="panelPatchUI" onclick="setMode('patch')">
-        <h3>Livelli Toppa (Clone Manuale)</h3>
+        <h3>Livelli Toppa (Manuale & Camaleonte)</h3>
         <div class="layer-list" id="patchLayerList"><div class="no-layers">Nessuna toppa attiva.</div></div>
         
         <div id="cloneConfirmBox" style="display:none; margin-top: 10px; border-top: 2px dashed #334155; padding-top: 10px;">
-             <div style="font-size: 0.85rem; color: var(--success); font-weight: bold; margin-bottom: 5px;" id="editTitle">✨ Nuova Toppa</div>
+             <div style="font-size: 0.85rem; color: var(--success); font-weight: bold; margin-bottom: 5px;" id="editTitle">✨ Modifica Toppa</div>
              <div class="fx-grid" style="margin: 5px 0;">
                  <label class="span-2">Sfumatura Bordi <span id="valFeather" style="float:right">15px</span><input type="range" id="fxFeather" min="0" max="50" value="15"></label>
                  <label>Luminosità:<input type="range" id="fxBr" min="50" max="150" value="100"></label>
@@ -185,33 +191,32 @@
 </div>
 
 <div class="main">
-    <div id="canvasContainer"><canvas id="editorCanvas"></canvas></div>
-    <div id="eraserCursor"></div>
+    <div id="canvasContainer">
+        <canvas id="editorCanvas"></canvas>
+        <div id="eraserCursor"></div>
+    </div>
 </div>
 
 <script>
+    // --- INIZIALIZZAZIONE ---
     const canvas = document.getElementById('editorCanvas'); 
     const ctx = canvas.getContext('2d');
     const container = document.getElementById('canvasContainer');
-    
-    // Canvas nascosto per Gomma e Camaleonte
     let eraserCanvas = document.createElement('canvas'); 
     let eCtx = eraserCanvas.getContext('2d');
 
     let baseImage = null, originalDataUrl = null;
-    let currentTool = 'patch'; // patch, eraser, chameleon, text, ocr
+    let currentTool = 'patch'; 
     let currentMode = 'patch'; 
 
     let patchLayers = []; let editingPatchIndex = -1;
-    let cloneState = { active: false, stage: 0, target: {x:0,y:0,w:0,h:0}, source: {x:0,y:0}, filters: { op: 100, br: 100, ct: 100, feather: 15 } };
+    let cloneState = { active: false, stage: 0, target: {x:0,y:0,w:0,h:0} };
     
     let textLayers = []; let selectedTextIndex = -1;
     let isDraggingText = false; let dragOffsetX = 0; let dragOffsetY = 0;
     
     let ocrState = { active: false, x:0, y:0, w:0, h:0 };
     let eraserState = { size: 40, tolWhite: 180, expand: 4 };
-    
-    // Stato Camaleonte
     let chamState = { stage: 0, target: {x:0,y:0,w:0,h:0} };
 
     let isMouseDown = false; let startX = 0, startY = 0;
@@ -223,10 +228,10 @@
         panelPatchUI: document.getElementById('panelPatchUI'), panelEraser: document.getElementById('panelEraser'), panelChameleon: document.getElementById('panelChameleon'), panelText: document.getElementById('panelText'),
         cloneConfirm: document.getElementById('cloneConfirmBox'), editTitle: document.getElementById('editTitle'), btnApplyClone: document.getElementById('btnApplyClone'), btnCancelClone: document.getElementById('btnCancelClone'), patchLayerList: document.getElementById('patchLayerList'),
         fxOp: document.getElementById('fxOp'), fxBr: document.getElementById('fxBr'), fxCt: document.getElementById('fxCt'), fxFeather: document.getElementById('fxFeather'), valFeather: document.getElementById('valFeather'),
+        chamDirection: document.getElementById('chamDirection'),
         brushSize: document.getElementById('brushSize'), tolWhite: document.getElementById('tolWhite'), expandOutline: document.getElementById('expandOutline'),
         valBrushSize: document.getElementById('valBrushSize'), valTolWhite: document.getElementById('valTolWhite'), valExpand: document.getElementById('valExpand'),
-        btnClearEraser: document.getElementById('btnClearEraser'), btnClearChameleon: document.getElementById('btnClearChameleon'), eraserCursor: document.getElementById('eraserCursor'),
-        chamNoise: document.getElementById('chamNoise'), valChamNoise: document.getElementById('valChamNoise'),
+        btnClearEraser: document.getElementById('btnClearEraser'), eraserCursor: document.getElementById('eraserCursor'),
         textLayerList: document.getElementById('textLayerList'), textControls: document.getElementById('textControls'), btnAddTextLayer: document.getElementById('btnAddTextLayer'), btnDrawOCR: document.getElementById('btnDrawOCR'), 
         overlayText: document.getElementById('overlayText'), fontSize: document.getElementById('fontSize'), fontStyle: document.getElementById('fontStyle'), textStroke: document.getElementById('textStroke'),
         posX: document.getElementById('posX'), posY: document.getElementById('posY'), 
@@ -238,43 +243,8 @@
 
     ui.btnDrawOCR.addEventListener('click', () => { setTool('ocr'); });
 
-    ui.zoomSlider.addEventListener('input', (e) => {
-        const scale = e.target.value / 100; ui.valZoom.innerText = e.target.value + '%';
-        if (baseImage) { canvas.style.width = (baseImage.width * scale) + 'px'; canvas.style.height = (baseImage.height * scale) + 'px'; }
-        updateCursorVisual(null);
-    });
-
-    function setTool(tool) {
-        if(cloneState.active && editingPatchIndex === -1 && tool !== 'patch') return alert("Conferma o annulla la toppa attiva prima.");
-        currentTool = tool;
-        
-        ui.toolPatch.classList.toggle('active-patch', tool === 'patch'); 
-        ui.toolEraser.classList.toggle('active-eraser', tool === 'eraser');
-        ui.toolChameleon.classList.toggle('active-chameleon', tool === 'chameleon');
-        
-        ui.panelPatchUI.style.display = (tool === 'patch' || tool === 'eraser' || tool === 'chameleon') ? 'block' : 'none'; 
-        ui.panelEraser.style.display = tool === 'eraser' ? 'block' : 'none';
-        ui.panelChameleon.style.display = tool === 'chameleon' ? 'block' : 'none';
-        
-        if (tool === 'patch') canvas.style.cursor = 'crosshair';
-        else if (tool === 'eraser') canvas.style.cursor = 'none';
-        else if (tool === 'chameleon') canvas.style.cursor = 'crosshair';
-        else if (tool === 'ocr') canvas.style.cursor = 'crosshair';
-        else if (tool === 'text') canvas.style.cursor = 'move';
-        
-        ui.eraserCursor.style.display = 'none';
-        if (tool === 'ocr') ui.btnDrawOCR.innerText = "✏️ Disegna Riquadro..."; else ui.btnDrawOCR.innerText = "📐 Disegna Area OCR";
-    }
-
-    function setMode(mode) {
-        if (currentMode === mode) return; 
-        currentMode = mode;
-        ui.panelPatchUI.classList.toggle('active', mode === 'patch'); ui.panelText.classList.toggle('active', mode === 'text');
-        
-        if (mode === 'text') { setTool('text'); if(selectedTextIndex === -1 && textLayers.length > 0) selectTextLayer(0); renderTextLayers(); } 
-        else if (mode === 'patch') { setTool('patch'); }
-    }
-
+    // --- CARICAMENTO FOTO (SICURO) ---
+    ui.upload.addEventListener('click', function() { this.value = null; });
     ui.upload.addEventListener('change', (e) => {
         const file = e.target.files[0]; if (!file) return;
         const reader = new FileReader();
@@ -283,7 +253,8 @@
             baseImage.onload = () => {
                 canvas.width = baseImage.width; canvas.height = baseImage.height;
                 eraserCanvas.width = canvas.width; eraserCanvas.height = canvas.height; eCtx.clearRect(0,0,canvas.width,canvas.height); 
-                patchLayers = []; textLayers = []; selectedTextIndex = -1; resetCloneState();
+                patchLayers = []; textLayers = []; editingPatchIndex = -1; selectedTextIndex = -1; 
+                cloneState.active = false; ui.cloneConfirm.style.display = 'none';
                 
                 const rect = container.getBoundingClientRect(); const scale = Math.min((rect.width-40)/baseImage.width, (rect.height-40)/baseImage.height, 1); 
                 let initialZoom = Math.max(10, Math.round(scale * 100));
@@ -297,27 +268,71 @@
         reader.readAsDataURL(file);
     });
 
+    ui.zoomSlider.addEventListener('input', (e) => {
+        const scale = e.target.value / 100; ui.valZoom.innerText = e.target.value + '%';
+        if (baseImage) { canvas.style.width = (baseImage.width * scale) + 'px'; canvas.style.height = (baseImage.height * scale) + 'px'; }
+        updateCursorVisual(null);
+    });
+
+    // --- STRUMENTI E MENU ---
+    function setTool(tool) {
+        if(cloneState.active && editingPatchIndex === -1 && tool !== 'patch') return alert("Conferma o annulla la toppa attiva prima di cambiare strumento.");
+        currentTool = tool;
+        
+        ui.toolPatch.classList.toggle('active-patch', tool === 'patch'); 
+        ui.toolEraser.classList.toggle('active-eraser', tool === 'eraser');
+        ui.toolChameleon.classList.toggle('active-chameleon', tool === 'chameleon');
+        
+        ui.panelPatchUI.style.display = (tool === 'patch' || tool === 'chameleon') ? 'block' : 'none'; 
+        ui.panelEraser.style.display = tool === 'eraser' ? 'block' : 'none';
+        ui.panelChameleon.style.display = tool === 'chameleon' ? 'block' : 'none';
+        
+        if (tool === 'patch' || tool === 'chameleon' || tool === 'ocr') canvas.style.cursor = 'crosshair';
+        else if (tool === 'eraser') canvas.style.cursor = 'none';
+        else if (tool === 'text') canvas.style.cursor = 'move';
+        
+        ui.eraserCursor.style.display = 'none';
+        if (tool === 'ocr') ui.btnDrawOCR.innerText = "✏️ Disegna Riquadro..."; else ui.btnDrawOCR.innerText = "📐 Disegna Area OCR";
+    }
+
+    function setMode(mode) {
+        if (currentMode === mode) return; 
+        currentMode = mode;
+        ui.panelPatchUI.classList.toggle('active', mode === 'patch'); ui.panelText.classList.toggle('active', mode === 'text');
+        if (mode === 'text') { setTool('text'); if(selectedTextIndex === -1 && textLayers.length > 0) selectTextLayer(0); renderTextLayers(); } 
+        else if (mode === 'patch') { setTool('patch'); }
+    }
+
+    // --- MOTORE GRAFICO FONDAMENTALE ---
     function redrawCanvas() {
         if (!baseImage) return;
         ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.filter = 'none'; ctx.globalAlpha = 1.0;
+        
         ctx.drawImage(baseImage, 0, 0); 
         ctx.drawImage(eraserCanvas, 0, 0); 
         
-        patchLayers.forEach((layer, index) => { if(editingPatchIndex !== index) applySmartPatch(layer, false); }); 
-        if(cloneState.active && cloneState.stage === 2) applySmartPatch(cloneState, true); 
+        // Disegna i Livelli Toppa (Quello attivo ha gli indicatori colorati)
+        patchLayers.forEach((layer, index) => { 
+            const isEditing = (editingPatchIndex === index && cloneState.active);
+            applySmartPatch(layer, isEditing); 
+        }); 
         
+        // Disegna i Testi
         drawTextLayers(); 
         
+        // Riquadro rosso mentre trascini per Toppa Manuale
         if(currentTool === 'patch' && cloneState.stage === 1 && isMouseDown) {
              ctx.lineWidth = 2; ctx.strokeStyle = "#ef4444"; ctx.setLineDash([5, 5]);
              ctx.strokeRect(cloneState.target.x, cloneState.target.y, cloneState.target.w, cloneState.target.h); ctx.setLineDash([]);
         }
         
+        // Riquadro arancio mentre trascini per Camaleonte
         if(currentTool === 'chameleon' && chamState.stage === 1 && isMouseDown) {
-             ctx.lineWidth = 2; ctx.strokeStyle = "#f59e0b"; ctx.setLineDash([6, 6]); // Riquadro Gold
+             ctx.lineWidth = 2; ctx.strokeStyle = "#f59e0b"; ctx.setLineDash([6, 6]); 
              ctx.strokeRect(chamState.target.x, chamState.target.y, chamState.target.w, chamState.target.h); ctx.setLineDash([]);
         }
 
+        // Riquadro giallo per OCR
         if(currentTool === 'ocr' && ocrState.active && isMouseDown) {
              ctx.lineWidth = 2; ctx.strokeStyle = "#eab308"; ctx.setLineDash([6, 6]);
              ctx.strokeRect(ocrState.x, ocrState.y, ocrState.w, ocrState.h); ctx.setLineDash([]);
@@ -325,40 +340,69 @@
         }
     }
 
-    function drawTextLayers() {
-        textLayers.forEach((l, i) => {
-            if(!l.visible || !l.content) return;
-            ctx.font = `${l.size}px ${l.font}`; ctx.textBaseline = "top"; ctx.shadowColor="transparent"; ctx.shadowBlur=0;
-            const lines = l.content.split('\n');
-            lines.forEach((line, idx) => {
-                const yPos = l.y + (idx * l.size * 1.15);
-                if (l.stroke > 0) { ctx.lineWidth = l.stroke; ctx.strokeStyle = "black"; ctx.strokeText(line, l.x, yPos); }
-                ctx.fillStyle = "white"; ctx.fillText(line, l.x, yPos);
-            });
+    // Disegna la singola toppa in modo pulito
+    function applySmartPatch(layer, isEditing) {
+        const tx = layer.target.x, ty = layer.target.y, w = layer.target.w, h = layer.target.h;
+        const sx = layer.source.x, sy = layer.source.y, f = layer.filters;
+        if (w <= 0 || h <= 0) return;
 
-            if(i === selectedTextIndex && currentMode === 'text') { 
-                let maxWidth = 0; lines.forEach(line => { let w = ctx.measureText(line).width; if(w > maxWidth) maxWidth = w; });
-                let totalHeight = l.size * 1.15 * lines.length;
-                ctx.lineWidth = 1; ctx.strokeStyle = "rgba(255, 255, 255, 0.8)"; ctx.setLineDash([4, 4]);
-                ctx.strokeRect(l.x - 4, l.y - 4, maxWidth + 8, totalHeight + 8); ctx.setLineDash([]);
-            }
+        const tCvs = document.createElement('canvas'); tCvs.width = w; tCvs.height = h; const tCtx = tCvs.getContext('2d');
+        tCtx.filter = `brightness(${f.br}%) contrast(${f.ct}%)`; 
+        try { tCtx.drawImage(canvas, sx, sy, w, h, 0, 0, w, h); } catch(e) {} 
+        tCtx.filter = 'none';
+
+        if (f.feather > 0) {
+            const mCvs = document.createElement('canvas'); mCvs.width = w; mCvs.height = h; const mCtx = mCvs.getContext('2d');
+            mCtx.fillStyle = 'black'; mCtx.shadowColor = 'black'; mCtx.shadowBlur = f.feather; 
+            const ft = Math.min(f.feather, w/2.2, h/2.2); mCtx.fillRect(ft, ft, w - ft*2, h - ft*2); 
+            tCtx.globalCompositeOperation = 'destination-in'; tCtx.drawImage(mCvs, 0, 0); tCtx.globalCompositeOperation = 'source-over';
+        }
+
+        ctx.globalAlpha = f.op / 100; ctx.drawImage(tCvs, tx, ty); ctx.globalAlpha = 1.0;
+
+        if(isEditing) { 
+            ctx.lineWidth = 2; ctx.strokeStyle = "#ef4444"; ctx.setLineDash([5, 5]); ctx.strokeRect(tx, ty, w, h); 
+            ctx.strokeStyle = "#10b981"; ctx.setLineDash([]); ctx.strokeRect(sx, sy, w, h); 
+            ctx.beginPath(); ctx.moveTo(tx+w/2, ty+h/2); ctx.lineTo(sx+w/2, sy+h/2); ctx.strokeStyle = "#10b981"; ctx.stroke(); 
+        }
+    }
+
+    // Disegna i Livelli di Testo
+    function drawTextLayers() {
+        textLayers.forEach((l) => {
+            if (!l.visible) return;
+            ctx.font = `${l.size}px ${l.font}`;
+            ctx.fillStyle = "white";
+            ctx.strokeStyle = "black";
+            ctx.lineWidth = l.stroke;
+            ctx.lineJoin = "round";
+            const lines = l.content.split('\n');
+            lines.forEach((line, j) => {
+                const ly = l.y + (j * l.size * 1.15) + l.size;
+                if (l.stroke > 0) ctx.strokeText(line, l.x, ly);
+                ctx.fillText(line, l.x, ly);
+            });
         });
     }
 
+    // --- EVENTI MOUSE SUPER SICURI ---
     function getCanvasCoords(e) {
         const rect = canvas.getBoundingClientRect(); const scaleX = canvas.width / rect.width, scaleY = canvas.height / rect.height;
         return { x: (e.clientX - rect.left) * scaleX, y: (e.clientY - rect.top) * scaleY }; 
     }
-    function isInside(c, rect) { return c.x >= rect.x && c.x <= rect.x+rect.w && c.y >= rect.y && c.y <= rect.y+rect.h; }
 
     canvas.addEventListener('mousedown', (e) => {
         if (!baseImage) return; const c = getCanvasCoords(e); isMouseDown = true; startX = c.x; startY = c.y;
 
         if (currentTool === 'eraser') { applyMagicEraser(c.x, c.y); redrawCanvas(); } 
         else if (currentTool === 'patch') {
-            const isInsideSource = cloneState.stage === 2 && c.x >= cloneState.source.x && c.x <= cloneState.source.x + cloneState.target.w && c.y >= cloneState.source.y && c.y <= cloneState.source.y + cloneState.target.h;
-            if (isInsideSource) canvas.style.cursor = 'grabbing';
-            else if (cloneState.stage === 0 || cloneState.stage === 1) { cloneState.stage = 1; cloneState.target = {x: startX, y: startY, w: 0, h: 0}; }
+            if (editingPatchIndex !== -1 && cloneState.active) {
+                 const l = patchLayers[editingPatchIndex];
+                 if (c.x >= l.source.x && c.x <= l.source.x + l.target.w && c.y >= l.source.y && c.y <= l.source.y + l.target.h) {
+                     cloneState.stage = 3; canvas.style.cursor = 'grabbing'; return;
+                 }
+            }
+            if (cloneState.stage === 0 || cloneState.stage === 1) { cloneState.stage = 1; cloneState.target = {x: startX, y: startY, w: 0, h: 0}; }
         } 
         else if (currentTool === 'chameleon') {
             chamState.stage = 1; chamState.target = {x: startX, y: startY, w: 0, h: 0};
@@ -388,7 +432,10 @@
         if (currentTool === 'eraser') { applyMagicEraser(c.x, c.y); redrawCanvas(); } 
         else if (currentTool === 'patch') {
             if (cloneState.stage === 1) { cloneState.target.w = c.x - startX; cloneState.target.h = c.y - startY; } 
-            else if (cloneState.stage === 2 && canvas.style.cursor === 'grabbing') { cloneState.source.x += c.x - startX; cloneState.source.y += c.y - startY; startX = c.x; startY = c.y; }
+            else if (cloneState.stage === 3 && editingPatchIndex !== -1) { 
+                patchLayers[editingPatchIndex].source.x += c.x - startX; patchLayers[editingPatchIndex].source.y += c.y - startY; 
+                startX = c.x; startY = c.y; 
+            }
             redrawCanvas();
         } 
         else if (currentTool === 'chameleon') {
@@ -406,22 +453,31 @@
         
         if (currentTool === 'patch') {
             canvas.style.cursor = 'crosshair';
+            if (cloneState.stage === 3) { cloneState.stage = 2; redrawCanvas(); return; } 
+
             if (cloneState.stage === 1) {
                 if (cloneState.target.w < 0) { cloneState.target.x += cloneState.target.w; cloneState.target.w *= -1; }
                 if (cloneState.target.h < 0) { cloneState.target.y += cloneState.target.h; cloneState.target.h *= -1; }
+                
                 if (cloneState.target.w > 10 && cloneState.target.h > 10) {
-                    cloneState.active = true; cloneState.stage = 2; 
-                    cloneState.source = { x: cloneState.target.x, y: cloneState.target.y - cloneState.target.h - 20 }; 
-                    ui.cloneConfirm.style.display = 'block'; ui.editTitle.innerText = "✨ Nuova Toppa"; ui.btnApplyClone.innerText = "✅ Conferma"; 
-                } else resetCloneState();
-                redrawCanvas();
+                    const newPatch = {
+                        target: { ...cloneState.target },
+                        source: { x: cloneState.target.x, y: cloneState.target.y - cloneState.target.h - 20 }, 
+                        filters: { op: 100, br: 100, ct: 100, feather: 15 }
+                    };
+                    patchLayers.push(newPatch);
+                    editPatch(patchLayers.length - 1); 
+                } else {
+                    cloneState.stage = 0; redrawCanvas();
+                }
             }
         } 
         else if (currentTool === 'chameleon') {
             if (chamState.target.w < 0) { chamState.target.x += chamState.target.w; chamState.target.w *= -1; }
             if (chamState.target.h < 0) { chamState.target.y += chamState.target.h; chamState.target.h *= -1; }
+
             if (chamState.target.w > 10 && chamState.target.h > 10) {
-                applyChameleonAI(chamState.target);
+                createChameleonPatch(chamState.target);
             }
             chamState.stage = 0; redrawCanvas();
         }
@@ -444,65 +500,79 @@
     canvas.addEventListener('mouseenter', () => { if(currentTool === 'eraser') ui.eraserCursor.style.display = 'block'; });
     canvas.addEventListener('mouseleave', () => { ui.eraserCursor.style.display = 'none'; isMouseDown = false; isDraggingText = false; });
 
-    // --- MAGIA CAMALEONTE IA (SMART AUTO-FILL) ---
-    ui.chamNoise.addEventListener('input', (e) => { ui.valChamNoise.innerText = e.target.value; });
-    
-    function applyChameleonAI(rect) {
-        const x = Math.floor(rect.x), y = Math.floor(rect.y);
-        const w = Math.floor(rect.w), h = Math.floor(rect.h);
-        if (w <= 0 || h <= 0) return;
-
-        // Estrae l'immagine principale (inclusi eventuali cancellazioni precedenti) con un margine di 1 pixel
-        const extData = ctx.getImageData(x - 1, y - 1, w + 2, h + 2).data;
+    // --- FUNZIONALITA LIVELLI TOPPA / CAMALEONTE ---
+    function createChameleonPatch(rect) {
+        const x = rect.x, y = rect.y, w = rect.w, h = rect.h;
+        const dir = ui.chamDirection.value;
         
-        const tCvs = document.createElement('canvas'); tCvs.width = w; tCvs.height = h; 
-        const tCtx = tCvs.getContext('2d');
-        const outData = tCtx.createImageData(w, h); const d = outData.data;
+        let sx = x, sy = y;
+        if (dir === 'top') sy = y - h - 5;
+        else if (dir === 'bottom') sy = y + h + 5;
+        else if (dir === 'left') sx = x - w - 5;
+        else if (dir === 'right') sx = x + w + 5;
 
-        const noiseLevel = parseInt(ui.chamNoise.value);
-
-        for (let py = 0; py < h; py++) {
-            for (let px = 0; px < w; px++) {
-                // Prendi i colori dai 4 lati del rettangolo allargato
-                const topIdx = ((px + 1) * 4); 
-                const botIdx = (((h + 1) * (w + 2) + (px + 1)) * 4);
-                const lftIdx = (((py + 1) * (w + 2)) * 4);
-                const rgtIdx = (((py + 1) * (w + 2) + (w + 1)) * 4);
-
-                // Calcola i pesi dell'interpolazione bilineare
-                const weightX = px / w;
-                const weightY = py / h;
-
-                for (let c = 0; c < 3; c++) {
-                    // Mix Orizzontale
-                    const cX = extData[lftIdx + c] * (1 - weightX) + extData[rgtIdx + c] * weightX;
-                    // Mix Verticale
-                    const cY = extData[topIdx + c] * (1 - weightY) + extData[botIdx + c] * weightY;
-                    
-                    let color = (cX + cY) / 2; // Media dell'incrocio
-                    color += (Math.random() - 0.5) * noiseLevel; // Aggiunge Texture
-                    
-                    d[(py * w + px) * 4 + c] = Math.min(255, Math.max(0, color));
-                }
-                d[(py * w + px) * 4 + 3] = 255; // Pienamente opaco
-            }
-        }
-        tCtx.putImageData(outData, 0, 0);
-        // "Stampa" la magia sul livello permanente gomma/effetti
-        eCtx.drawImage(tCvs, x, y);
+        const newPatch = {
+            target: { x, y, w, h },
+            source: { x: sx, y: sy },
+            filters: { op: 100, br: 100, ct: 100, feather: 15 } 
+        };
+        
+        patchLayers.push(newPatch);
+        setTool('patch'); 
+        editPatch(patchLayers.length - 1); 
     }
+
+    function renderPatchLayers() {
+        ui.patchLayerList.innerHTML = ''; 
+        if(patchLayers.length === 0) ui.patchLayerList.innerHTML = `<div class="no-layers">Nessuna toppa. Trascina per crearne una.</div>`;
+        patchLayers.forEach((l, i) => {
+            const div = document.createElement('div'); div.className = `layer-item ${editingPatchIndex === i ? 'active' : ''}`; 
+            div.innerHTML = `<span>🩹 Toppa ${i+1}</span><div class="layer-actions"><button class="layer-btn" onclick="editPatch(${i})">✏️</button><button class="layer-btn del" onclick="deletePatch(${i})">🗑️</button></div>`; ui.patchLayerList.appendChild(div);
+        });
+    }
+
+    window.editPatch = function(i) {
+        editingPatchIndex = i; 
+        cloneState.active = true; cloneState.stage = 2; 
+        ui.cloneConfirm.style.display = 'block'; ui.editTitle.innerText = `✨ Modifica Toppa ${i+1}`; 
+        setFiltersUI(patchLayers[i].filters); renderPatchLayers(); redrawCanvas();
+    };
     
-    // Pulisce sia Gomma che Camaleonte
-    const clearEffects = () => { if(confirm("Cancellare le modifiche di Gomma e Camaleonte?")) { eCtx.clearRect(0,0,canvas.width,canvas.height); redrawCanvas(); }};
-    ui.btnClearEraser.addEventListener('click', clearEffects);
-    ui.btnClearChameleon.addEventListener('click', clearEffects);
+    window.deletePatch = function(i) { 
+        patchLayers.splice(i, 1); 
+        if(editingPatchIndex === i) { editingPatchIndex = -1; cloneState.active = false; ui.cloneConfirm.style.display = 'none'; }
+        renderPatchLayers(); redrawCanvas(); 
+    };
 
+    function updateFilters(){ 
+        if(editingPatchIndex === -1 || !cloneState.active) return;
+        patchLayers[editingPatchIndex].filters = {
+            op: parseInt(ui.fxOp.value), br: parseInt(ui.fxBr.value),
+            ct: parseInt(ui.fxCt.value), feather: parseInt(ui.fxFeather.value)
+        };
+        ui.valFeather.innerText = ui.fxFeather.value + 'px';
+        redrawCanvas(); 
+    }
+    ['fxOp','fxBr','fxCt','fxFeather'].forEach(id=>ui[id].addEventListener('input',updateFilters));
 
-    // --- GOMMA MAGICA NORMALE ---
+    function setFiltersUI(f){ ui.fxOp.value=f.op; ui.fxBr.value=f.br; ui.fxCt.value=f.ct; ui.fxFeather.value=f.feather; ui.valFeather.innerText=f.feather+'px'; }
+    
+    ui.btnApplyClone.addEventListener('click',()=>{ editingPatchIndex = -1; cloneState.active = false; ui.cloneConfirm.style.display = 'none'; renderPatchLayers(); redrawCanvas(); });
+    ui.btnCancelClone.addEventListener('click', () => { editingPatchIndex = -1; cloneState.active = false; ui.cloneConfirm.style.display = 'none'; renderPatchLayers(); redrawCanvas(); });
+
+    // --- GOMMA MAGICA ---
+    ui.btnClearEraser.addEventListener('click', () => { if(confirm("Cancellare il lavoro della Gomma?")) { eCtx.clearRect(0,0,canvas.width,canvas.height); redrawCanvas(); }});
+
     function updateCursorVisual(e) {
         const scale = parseInt(ui.zoomSlider.value) / 100; const visualSize = eraserState.size * scale;
         ui.eraserCursor.style.width = visualSize + 'px'; ui.eraserCursor.style.height = visualSize + 'px';
-        if(e) { ui.eraserCursor.style.left = e.clientX + 'px'; ui.eraserCursor.style.top = e.clientY + 'px'; ui.eraserCursor.style.display = 'block'; }
+        if(e) { 
+            // Aggiornato per correggere il posizionamento collo scroll
+            const rect = container.getBoundingClientRect();
+            ui.eraserCursor.style.left = (e.clientX - rect.left) + 'px'; 
+            ui.eraserCursor.style.top = (e.clientY - rect.top) + 'px'; 
+            ui.eraserCursor.style.display = 'block'; 
+        }
     }
     ui.brushSize.addEventListener('input', (e) => { eraserState.size = parseInt(e.target.value); ui.valBrushSize.innerText = eraserState.size + 'px'; updateCursorVisual(null); });
     ui.tolWhite.addEventListener('input', (e) => { eraserState.tolWhite = parseInt(e.target.value); ui.valTolWhite.innerText = e.target.value; });
@@ -557,51 +627,12 @@
         tCtx.putImageData(patchData, 0, 0); eCtx.drawImage(tCvs, x-r, y-r);
     }
 
-    // --- PATCH & CLONE ---
-    function applySmartPatch(state, drawOverlays) {
-        const tx = state.target.x, ty = state.target.y, w = state.target.w, h = state.target.h, sx = state.source.x, sy = state.source.y, filters = state.filters;
-        if (w <= 0 || h <= 0) return;
-        const tempCvs = document.createElement('canvas'); tempCvs.width = w; tempCvs.height = h; const tCtx = tempCvs.getContext('2d');
-        tCtx.filter = `brightness(${filters.br}%) contrast(${filters.ct}%)`; try { tCtx.drawImage(canvas, sx, sy, w, h, 0, 0, w, h); } catch(e) {} tCtx.filter = 'none';
-        if (filters.feather > 0) {
-            const mCvs = document.createElement('canvas'); mCvs.width = w; mCvs.height = h; const mCtx = mCvs.getContext('2d');
-            mCtx.fillStyle = 'black'; mCtx.shadowColor = 'black'; mCtx.shadowBlur = filters.feather; 
-            const f = Math.min(filters.feather, w/2.2, h/2.2); mCtx.fillRect(f, f, w - f*2, h - f*2); 
-            tCtx.globalCompositeOperation = 'destination-in'; tCtx.drawImage(mCvs, 0, 0); tCtx.globalCompositeOperation = 'source-over';
-        }
-        ctx.globalAlpha = filters.op / 100; ctx.drawImage(tempCvs, tx, ty); ctx.globalAlpha = 1.0;
-        if(drawOverlays) { 
-            ctx.lineWidth = 2; ctx.strokeStyle = "#ef4444"; ctx.setLineDash([5, 5]); ctx.strokeRect(tx, ty, w, h); 
-            ctx.strokeStyle = "#10b981"; ctx.setLineDash([]); ctx.strokeRect(sx, sy, w, h); 
-            ctx.beginPath(); ctx.moveTo(tx+w/2, ty+h/2); ctx.lineTo(sx+w/2, sy+h/2); ctx.strokeStyle = "#10b981"; ctx.stroke(); 
-        }
-    }
-    function renderPatchLayers() {
-        ui.patchLayerList.innerHTML = ''; 
-        if(patchLayers.length === 0) ui.patchLayerList.innerHTML = `<div class="no-layers">Nessuna toppa attiva.</div>`;
-        patchLayers.forEach((l, i) => {
-            const div = document.createElement('div'); div.className = `layer-item ${editingPatchIndex === i ? 'active' : ''}`; 
-            div.innerHTML = `<span>🩹 Toppa ${i+1}</span><div class="layer-actions"><button class="layer-btn" onclick="editPatch(${i})">✏️</button><button class="layer-btn del" onclick="deletePatch(${i})">🗑️</button></div>`; ui.patchLayerList.appendChild(div);
-        });
-    }
-    window.editPatch = function(i) {
-        if(cloneState.active && editingPatchIndex === -1) return alert("Conferma prima la toppa in corso."); 
-        editingPatchIndex = i; const l = patchLayers[i]; 
-        cloneState = { active: true, stage: 2, target: {...l.target}, source: {...l.source}, filters: {...l.filters} }; 
-        ui.cloneConfirm.style.display = 'block'; ui.editTitle.innerText = `✏️ Modifica Toppa ${i+1}`; ui.btnApplyClone.innerText = "💾 Aggiorna Livello"; 
-        setFiltersUI(cloneState.filters); renderPatchLayers(); redrawCanvas();
-    };
-    window.deletePatch = function(i) { patchLayers.splice(i, 1); if(editingPatchIndex === i) resetCloneState(); renderPatchLayers(); redrawCanvas(); };
-    function updateFilters(){ cloneState.filters={op:parseInt(ui.fxOp.value),br:parseInt(ui.fxBr.value),ct:parseInt(ui.fxCt.value),feather:parseInt(ui.fxFeather.value)}; ui.valFeather.innerText=cloneState.filters.feather+'px'; if(cloneState.active)redrawCanvas(); }
-    ['fxOp','fxBr','fxCt','fxFeather'].forEach(id=>ui[id].addEventListener('input',updateFilters));
-    function setFiltersUI(f){ui.fxOp.value=f.op;ui.fxBr.value=f.br;ui.fxCt.value=f.ct;ui.fxFeather.value=f.feather;updateFilters();}
-    function resetCloneState(){ editingPatchIndex=-1; cloneState={active:false,stage:0,target:{x:0,y:0,w:0,h:0},source:{x:0,y:0},filters:{op:100,br:100,ct:100,feather:15}}; ui.cloneConfirm.style.display='none'; setFiltersUI(cloneState.filters); renderPatchLayers(); redrawCanvas(); }
-    ui.btnApplyClone.addEventListener('click',()=>{ if(!cloneState.active) return; const ld={target:{...cloneState.target},source:{...cloneState.source},filters:{...cloneState.filters}}; if(editingPatchIndex==-1) patchLayers.push(ld); else patchLayers[editingPatchIndex]=ld; resetCloneState(); });
-    ui.btnCancelClone.addEventListener('click', resetCloneState);
-
-    // --- TESTO ---
+    // --- TESTO E OCR ---
     ui.btnAddTextLayer.addEventListener('click', () => { addTextLayer("Nuovo Testo", canvas.width/2, canvas.height/2); setMode('text'); });
-    function addTextLayer(content, x, y) { textLayers.push({ content: content, x: x, y: y, size: 42, font: 'sans-serif', stroke: 3, visible: true }); selectTextLayer(textLayers.length - 1); }
+    function addTextLayer(content, x, y) {
+        textLayers.push({ content: content, x: x, y: y, size: 42, font: 'sans-serif', stroke: 3, visible: true });
+        selectTextLayer(textLayers.length - 1);
+    }
     function renderTextLayers() {
         ui.textLayerList.innerHTML = '';
         if(textLayers.length === 0) { ui.textLayerList.innerHTML = `<div class="no-layers">Nessun livello di testo.</div>`; ui.textControls.style.display = 'none'; return; }
@@ -610,18 +641,32 @@
             const div = document.createElement('div'); div.className = `layer-item ${selectedTextIndex === i ? 'active' : ''}`; 
             div.onclick = (e) => { if(!e.target.classList.contains('layer-btn')) { setMode('text'); selectTextLayer(i); } };
             const preview = l.content.substring(0, 15) + (l.content.length>15?'...':'');
-            div.innerHTML = `<span style="font-family:${l.font}; opacity:${l.visible?1:0.4}">T. ${preview || 'Vuoto'}</span><div class="layer-actions"><button class="layer-btn vis" onclick="toggleTextVis(${i})" title="Mostra/Nascondi">${l.visible ? '👁️' : '🙈'}</button><button class="layer-btn del" onclick="deleteTextLayer(${i})">🗑️</button></div>`;
+            div.innerHTML = `<span style="font-family:${l.font}; opacity:${l.visible?1:0.4}">T. ${preview || 'Vuoto'}</span>
+                             <div class="layer-actions">
+                                <button class="layer-btn vis" onclick="toggleTextVis(${i})" title="Mostra/Nascondi">${l.visible ? '👁️' : '🙈'}</button>
+                                <button class="layer-btn del" onclick="deleteTextLayer(${i})">🗑️</button>
+                             </div>`;
             ui.textLayerList.appendChild(div);
         });
     }
+
     window.toggleTextVis = function(i) { textLayers[i].visible = !textLayers[i].visible; renderTextLayers(); redrawCanvas(); };
     window.deleteTextLayer = function(i) { textLayers.splice(i, 1); selectedTextIndex = -1; renderTextLayers(); redrawCanvas(); };
+
     function selectTextLayer(index) {
         selectedTextIndex = index; const l = textLayers[index];
         ui.overlayText.value = l.content; ui.fontSize.value = l.size; ui.fontStyle.value = l.font; ui.textStroke.value = l.stroke;
         ui.posX.value = Math.round(l.x); ui.posY.value = Math.round(l.y);
         renderTextLayers(); redrawCanvas();
     }
+    
+    function updateTextInputs() {
+        if(selectedTextIndex >= 0) {
+            ui.posX.value = Math.round(textLayers[selectedTextIndex].x);
+            ui.posY.value = Math.round(textLayers[selectedTextIndex].y);
+        }
+    }
+
     ui.overlayText.addEventListener('input',(e)=>{if(selectedTextIndex>=0)textLayers[selectedTextIndex].content=e.target.value;redrawCanvas();renderTextLayers();});
     ui.fontSize.addEventListener('input',(e)=>{if(selectedTextIndex>=0)textLayers[selectedTextIndex].size=parseInt(e.target.value);redrawCanvas();});
     ui.fontStyle.addEventListener('change',(e)=>{if(selectedTextIndex>=0)textLayers[selectedTextIndex].font=e.target.value;redrawCanvas();renderTextLayers();});
@@ -643,7 +688,7 @@
         ui.btnDrawOCR.innerText = "📐 Disegna Area OCR"; ui.btnDrawOCR.disabled = false;
     }
 
-    // --- MAPPA E RICERCA (FIX MAPS URL) ---
+    // --- MAPPA E RICERCA ---
     function initMap(lat, lon) {
         ui.miniMap.style.display = 'block';
         if (!theMap) {
@@ -689,15 +734,10 @@
         } catch (error) { alert("Errore di connessione."); ui.btnGeocode.innerText = "📍 Trova"; ui.btnGeocode.disabled = false; }
     });
 
-    // BUGFIX: LINK MAPS CORRETTO
     ui.btnTestMaps.addEventListener('click', () => {
         const lat = ui.exifLat.value; const lon = ui.exifLon.value;
-        if(lat && lon) {
-            // Sintassi ufficiale di Google Maps Search
-            window.open(`https://www.google.com/maps/search/?api=1&query=${lat},${lon}`, '_blank');
-        } else {
-            alert("Inserisci o cerca prima le coordinate!");
-        }
+        if(lat && lon) window.open(`https://www.google.com/maps/search/?api=1&query=${lat},${lon}`, '_blank');
+        else alert("Inserisci o cerca prima le coordinate!");
     });
 
     ui.btnPasteToText.addEventListener('click', () => {
@@ -712,9 +752,19 @@
     ui.download.addEventListener('click',()=>{
         if (!baseImage) return alert("Carica foto!"); 
         const lat=parseFloat(ui.exifLat.value),lon=parseFloat(ui.exifLon.value); 
-        const tempIdx = selectedTextIndex; selectedTextIndex = -1; redrawCanvas();
+        
+        // Disattiva gli overlays prima di scaricare
+        const tempIdx = selectedTextIndex; selectedTextIndex = -1; 
+        const tempEditPatch = editingPatchIndex; editingPatchIndex = -1; cloneState.active = false;
+        redrawCanvas();
+        
         const jpg=canvas.toDataURL('image/jpeg',0.95); 
-        selectedTextIndex = tempIdx; redrawCanvas(); 
+        
+        // Ripristina l'interfaccia
+        selectedTextIndex = tempIdx; editingPatchIndex = tempEditPatch; 
+        if(editingPatchIndex !== -1) cloneState.active = true;
+        redrawCanvas(); 
+        
         if(!isNaN(lat)&&!isNaN(lon)){
             try{
                 let e={"0th":{},"Exif":{},"GPS":{},"Interop":{},"1st":{}}; try{e=piexif.load(originalDataUrl)}catch(z){}
