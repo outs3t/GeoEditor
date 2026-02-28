@@ -3,112 +3,199 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>GeoEditor V33 – All-In-One</title>
-
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
-
+<title>GeoEditor V32 – Mobile Masterpiece</title>
 <script src="https://cdn.jsdelivr.net/npm/piexifjs"></script>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <style>
-    /* Configurazione Font di Sistema per Apple (SF Pro) */
-    :root {
-        --font-apple-text: -apple-system, "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
-        --font-apple-display: -apple-system, "SF Pro Display", "Helvetica Neue", Helvetica, Arial, sans-serif;
-        --font-roboto: 'Roboto', sans-serif;
-    }
+    /* =========================================
+       IMPORTAZIONE FONT LOCALI (ROBOTO & SF PRO)
+       ========================================= */
+    @font-face { font-family: 'Roboto'; src: url('Roboto-Light.ttf') format('truetype'); font-weight: 300; }
+    @font-face { font-family: 'Roboto'; src: url('Roboto-Regular.ttf') format('truetype'); font-weight: 400; }
+    @font-face { font-family: 'Roboto'; src: url('Roboto-Medium.ttf') format('truetype'); font-weight: 500; }
+    @font-face { font-family: 'Roboto'; src: url('Roboto-Bold.ttf') format('truetype'); font-weight: 700; }
 
-    /* --- STILI INTERFACCIA --- */
+    @font-face { font-family: 'SF Pro Text'; src: url('SFProText-Light.otf') format('opentype'); font-weight: 300; }
+    @font-face { font-family: 'SF Pro Text'; src: url('SFProText-Regular.otf') format('opentype'); font-weight: 400; }
+    @font-face { font-family: 'SF Pro Text'; src: url('SFProText-Medium.otf') format('opentype'); font-weight: 500; }
+    @font-face { font-family: 'SF Pro Text'; src: url('SFProText-Semibold.otf') format('opentype'); font-weight: 600; }
+
+    @font-face { font-family: 'SF Pro Display'; src: url('SFProDisplay-Semibold.otf') format('opentype'); font-weight: 600; }
+
+    /* --- VARIABILI E RESET --- */
     :root { --bg: #0f172a; --panel: #1e293b; --panel-light: #334155; --acc: #3b82f6; --txt: #f8fafc; --danger: #ef4444; --success: #10b981; --warn: #eab308; --purple: #a855f7; --gold: #f59e0b; }
-    body { background: var(--bg); color: var(--txt); font-family: var(--font-apple-text); display: flex; flex-direction: row; margin: 0; height: 100vh; overflow: hidden; overscroll-behavior: none; }
+    body { background: var(--bg); color: var(--txt); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; display: flex; flex-direction: row; margin: 0; height: 100vh; overflow: hidden; overscroll-behavior: none; }
     
+    /* --- LAYOUT PRINCIPALE --- */
     .sidebar { width: 440px; background: var(--panel); padding: 20px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; border-right: 1px solid var(--panel-light); box-shadow: 4px 0 15px rgba(0,0,0,0.5); z-index: 10; height: 100vh; box-sizing: border-box; }
     .main { flex: 1; display: flex; flex-direction: column; padding: 20px; background: #000; position: relative; height: 100vh; box-sizing: border-box; overflow: hidden; }
     
+    /* --- CANVAS AREA --- */
     #canvasContainer { width: 100%; height: 100%; overflow: auto; border: 2px solid var(--panel-light); box-shadow: 0 0 30px rgba(0,0,0,0.5); background: #1e293b; text-align: center; position: relative; border-radius: 12px; touch-action: none; }
     canvas { display: inline-block; vertical-align: top; box-shadow: 0 0 20px rgba(0,0,0,0.8); cursor: crosshair; transform-origin: top left; }
     #eraserCursor { position: absolute; border: 2px solid white; box-shadow: 0 0 5px black, inset 0 0 5px black; border-radius: 50%; pointer-events: none; display: none; transform: translate(-50%, -50%); z-index: 9999;}
     
+    /* --- TIPOGRAFIA --- */
     h2, h3 { margin: 0; color: var(--acc); }
     h2 { font-size: 1.5rem; text-align: center; margin-bottom: 5px; font-weight: 700; }
     h3 { font-size: 1.1rem; color: #94a3b8; border-bottom: 1px solid var(--panel-light); padding-bottom: 8px; margin-bottom: 12px; font-weight: 600;}
     
+    /* --- PANNELLI E UI --- */
     .panel-section { background: rgba(0,0,0,0.25); padding: 15px; border-radius: 12px; border: 1px solid var(--panel-light); transition: 0.3s ease; margin-bottom: 8px; cursor: pointer; }
     .panel-section.active { border-color: var(--acc); background: rgba(59, 130, 246, 0.08); box-shadow: inset 0 0 0 1px var(--acc); cursor: default; }
     
     label { font-size: 0.85rem; font-weight: 600; color: #cbd5e1; display: flex; flex-direction: column; gap: 6px; }
-    input[type="number"], input[type="text"], textarea, select { padding: 12px; border-radius: 8px; border: 1px solid var(--panel-light); background: #0f172a; color: white; width: 100%; box-sizing: border-box; font-family: inherit; font-size: 16px; }
     
-    .btn { background: var(--panel-light); color: white; border: none; padding: 12px 16px; border-radius: 8px; font-weight: 600; font-size: 0.95rem; cursor: pointer; transition: all 0.2s ease; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; }
-    .btn-primary { background: linear-gradient(135deg, var(--acc), #2563eb); }
+    /* Input ottimizzati per il Touch */
+    input[type="number"], input[type="text"], textarea, select { padding: 12px; border-radius: 8px; border: 1px solid var(--panel-light); background: #0f172a; color: white; width: 100%; box-sizing: border-box; font-family: inherit; font-size: 16px; transition: border-color 0.2s;}
+    input:focus, textarea:focus, select:focus { outline: none; border-color: var(--acc); }
+    textarea { resize: vertical; min-height: 60px; font-family: monospace; }
+    input[type="range"] { margin-top: 8px; cursor: pointer; height: 24px; }
+
+    /* --- BOTTONI --- */
+    .btn { background: var(--panel-light); color: white; border: none; padding: 12px 16px; border-radius: 8px; font-weight: 600; font-size: 0.95rem; cursor: pointer; transition: all 0.2s ease; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    .btn:active { transform: scale(0.97); }
+    .btn-primary { background: linear-gradient(135deg, var(--acc), #2563eb); } .btn-primary:hover { filter: brightness(1.1); }
+    .btn-green { background: linear-gradient(135deg, var(--success), #059669); color: white; }
+    .btn-danger { background: var(--danger); } 
     .btn-warn { background: linear-gradient(135deg, var(--warn), #ca8a04); color: #000; } 
-    
+    .btn-purple { background: linear-gradient(135deg, var(--purple), #7e22ce); } 
+    .btn-gold { background: linear-gradient(135deg, var(--gold), #d97706); color: #000; } 
+    .btn-outline { background: transparent; border: 2px solid var(--panel-light); color: var(--txt); box-shadow: none; }
+    .btn-outline:active { background: var(--panel-light); }
+
+    /* --- TOOLBAR STRUMENTI --- */
     .toolbar { display: flex; gap: 8px; margin-bottom: 15px; }
     .tool-btn { flex: 1; padding: 10px 5px; font-size: 0.8rem; border: 2px solid transparent; flex-direction: column; gap: 4px; text-align: center; line-height: 1.2; }
-    .tool-btn.active-patch { border-color: var(--acc); background: rgba(59, 130, 246, 0.2); }
+    .tool-btn.active-patch { border-color: var(--acc); background: rgba(59, 130, 246, 0.2); box-shadow: inset 0 0 10px rgba(59,130,246,0.3); }
+    .tool-btn.active-eraser { border-color: var(--purple); background: rgba(168, 85, 247, 0.2); box-shadow: inset 0 0 10px rgba(168,85,247,0.3); }
+    .tool-btn.active-chameleon { border-color: var(--gold); background: rgba(245, 158, 11, 0.2); box-shadow: inset 0 0 10px rgba(245,158,11,0.3); }
 
-    .fx-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 15px 0; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; }
-    .layer-list { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; max-height: 160px; overflow-y: auto; background: rgba(0,0,0,0.2); padding: 8px; border-radius: 8px; }
-    .layer-item { display: flex; justify-content: space-between; align-items: center; background: #0f172a; border: 1px solid #334155; padding: 10px 12px; border-radius: 6px; font-size: 0.9rem; cursor: pointer; }
-    .layer-item.active { border-color: var(--acc); background: rgba(59, 130, 246, 0.15); }
+    /* --- GRIGLIE E LISTE --- */
+    .fx-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 15px 0; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; border: 1px solid #1e293b;}
+    .span-2 { grid-column: span 2; border-top: 1px solid #334155; padding-top: 12px; }
+    
+    .layer-list { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; max-height: 160px; overflow-y: auto; background: rgba(0,0,0,0.2); padding: 8px; border-radius: 8px; border: 1px solid #1e293b;}
+    .layer-item { display: flex; justify-content: space-between; align-items: center; background: #0f172a; border: 1px solid #334155; padding: 10px 12px; border-radius: 6px; font-size: 0.9rem; cursor: pointer; transition: 0.2s; }
+    .layer-item.active { border-color: var(--acc); background: rgba(59, 130, 246, 0.15); border-left: 4px solid var(--acc); }
+    .layer-actions { display: flex; gap: 8px; }
+    .layer-btn { background: #1e293b; border: 1px solid #334155; border-radius: 6px; cursor: pointer; color: #cbd5e1; padding: 6px 10px; min-width: 40px; min-height: 36px; display: flex; justify-content: center; align-items: center;}
+    .layer-btn:active { background: #334155; }
+    
+    /* --- CONTROLLI DI PRECISIONE --- */
+    .precision-controls { display: flex; gap: 10px; margin-top: 10px; align-items: center; background: rgba(0,0,0,0.2); padding: 8px; border-radius: 8px;}
+    .nudge-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; flex: 1; }
+    .nudge-btn { padding: 8px; background: var(--panel-light); border: none; color: white; cursor: pointer; border-radius: 6px; font-size: 1rem; min-height: 40px;} 
+    .nudge-btn:active { background: var(--acc); }
+    .no-layers {text-align:center; color:#64748b; font-size:0.9rem; padding: 15px; font-style: italic;}
+    
+    #miniMap { height: 200px; width: 100%; margin-top: 12px; border-radius: 8px; display: none; border: 2px solid var(--panel-light); z-index: 1;}
 
-    #miniMap { height: 200px; width: 100%; margin-top: 12px; border-radius: 8px; display: none; border: 2px solid var(--panel-light); }
-
+    /* =========================================
+       MEDIA QUERIES PER MOBILE
+       ========================================= */
     @media (max-width: 800px) {
         body { flex-direction: column; }
-        .main { order: 1; height: 45vh; }
-        .sidebar { order: 2; width: 100%; height: 55vh; border-right: none; border-top: 3px solid var(--panel-light); border-radius: 20px 20px 0 0; }
+        .main { order: 1; height: 45vh; padding: 10px; padding-bottom: 5px; }
+        .sidebar { order: 2; width: 100%; height: 55vh; border-right: none; border-top: 3px solid var(--panel-light); border-radius: 20px 20px 0 0; padding: 20px 15px; box-shadow: 0 -5px 25px rgba(0,0,0,0.6); padding-bottom: 40px; }
+        #canvasContainer { border-radius: 8px; }
+        h2 { font-size: 1.3rem; }
+        .fx-grid { gap: 8px; padding: 10px; }
+        .sidebar::-webkit-scrollbar { width: 4px; }
+        .sidebar::-webkit-scrollbar-thumb { background: var(--panel-light); border-radius: 10px; }
     }
 </style>
 </head>
 <body>
 
+<div style="visibility: hidden; position: absolute; width: 0; height: 0; overflow: hidden;">
+    <span style="font-family: 'Roboto'; font-weight: 300;">Preload</span>
+    <span style="font-family: 'Roboto'; font-weight: 400;">Preload</span>
+    <span style="font-family: 'Roboto'; font-weight: 500;">Preload</span>
+    <span style="font-family: 'Roboto'; font-weight: 700;">Preload</span>
+    <span style="font-family: 'SF Pro Text'; font-weight: 300;">Preload</span>
+    <span style="font-family: 'SF Pro Text'; font-weight: 400;">Preload</span>
+    <span style="font-family: 'SF Pro Text'; font-weight: 500;">Preload</span>
+    <span style="font-family: 'SF Pro Text'; font-weight: 600;">Preload</span>
+    <span style="font-family: 'SF Pro Display'; font-weight: 600;">Preload</span>
+</div>
+
 <div class="sidebar">
-    <h2>🛠️ GeoEditor V33 <span style="font-size:0.8rem; font-weight:normal; color:var(--acc);">Font Pack</span></h2>
+    <h2>🛠️ GeoEditor V32 <span style="font-size:0.8rem; font-weight:normal; color:var(--acc);">Mobile Edition</span></h2>
     
     <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 15px;">
-        <label class="btn btn-primary" style="flex: 2; margin: 0; font-size: 1rem;">📂 Carica Foto<input type="file" id="upload" accept="image/*" style="display: none;"></label>
+        <label class="btn btn-primary" style="flex: 2; margin: 0; font-size: 1rem;">📂 1. Carica Foto<input type="file" id="upload" accept="image/*" style="display: none;"></label>
         <div style="flex: 1.5; background: rgba(0,0,0,0.3); padding: 8px 12px; border-radius: 8px; text-align: center; border: 1px solid var(--panel-light);">
-            <label style="font-size: 0.75rem; color: #cbd5e1;">ZOOM: <span id="valZoom">100%</span></label>
-            <input type="range" id="zoomSlider" min="10" max="400" value="100" style="width: 100%;">
+            <label style="font-size: 0.75rem; color: #cbd5e1; margin-bottom: 4px; display: block;">ZOOM: <span id="valZoom" style="color:white;">100%</span></label>
+            <input type="range" id="zoomSlider" min="10" max="400" value="100" style="width: 100%; margin: 0;">
         </div>
     </div>
 
+    <h3>RIMOZIONE (FASE 1)</h3>
     <div class="toolbar">
-        <button class="btn tool-btn active-patch" id="toolPatch" onclick="setTool('patch')">🩹 Toppa</button>
-        <button class="btn tool-btn" id="toolEraser" onclick="setTool('eraser')" style="background:var(--purple)">✨ Gomma</button>
-        <button class="btn tool-btn" id="toolChameleon" onclick="setTool('chameleon')" style="background:var(--gold)">🦎 Auto</button>
+        <button class="btn tool-btn active-patch" id="toolPatch" onclick="setTool('patch')"><span style="font-size: 1.2rem;">🩹</span> Toppa<br>Manuale</button>
+        <button class="btn tool-btn btn-purple" id="toolEraser" onclick="setTool('eraser')"><span style="font-size: 1.2rem;">✨</span> Gomma<br>Magica</button>
+        <button class="btn tool-btn btn-gold" id="toolChameleon" onclick="setTool('chameleon')"><span style="font-size: 1.2rem;">🦎</span> Auto<br>Clone</button>
+    </div>
+
+    <div class="panel-section" id="panelChameleon" style="display:none">
+        <h3 style="color:var(--gold)">Toppa Intelligente (Auto-Clone)</h3>
+        <p style="font-size: 0.85rem; color: #cbd5e1; margin: 5px 0 10px 0; line-height:1.4;">Disegna un riquadro sul testo. Il sistema clonerà l'area adiacente automaticamente.</p>
+        <div class="fx-grid" style="margin:0;">
+            <label class="span-2">Copia Texture da:
+                <select id="chamDirection">
+                    <option value="top">⬆️ Sopra (Ideale asfalto/muri)</option>
+                    <option value="bottom">⬇️ Sotto</option>
+                    <option value="left">⬅️ Sinistra</option>
+                    <option value="right">➡️ Destra</option>
+                </select>
+            </label>
+        </div>
+    </div>
+
+    <div class="panel-section" id="panelEraser" style="display:none">
+        <h3 style="color:var(--purple)">Gomma a Dilatazione</h3>
+        <div class="fx-grid" style="margin:0 0 10px 0;">
+            <label class="span-2">Pennello: <span id="valBrushSize" style="color:white; float:right;">40px</span><input type="range" id="brushSize" min="5" max="200" value="40"></label>
+            <label>Sens. Bianco: <span id="valTolWhite" style="color:white;">180</span><input type="range" id="tolWhite" min="100" max="255" value="180"></label>
+            <label>Allarga Bordo: <span id="valExpand" style="color:white;">4px</span><input type="range" id="expandOutline" min="0" max="15" value="4"></label>
+        </div>
+        <button class="btn btn-outline" id="btnClearEraser">🗑️ Cancella effetti Gomma</button>
     </div>
 
     <div class="panel-section active" id="panelPatchUI" onclick="setMode('patch')">
-        <h3>Gestione Toppe</h3>
-        <div class="layer-list" id="patchLayerList"></div>
-        <div id="cloneConfirmBox" style="display:none; margin-top:10px;">
-             <div class="fx-grid">
-                 <label class="span-2">Sfumatura <span id="valFeather" style="float:right;">15px</span><input type="range" id="fxFeather" min="0" max="50" value="15"></label>
+        <h3>Livelli Toppa (Gestione)</h3>
+        <div class="layer-list" id="patchLayerList"><div class="no-layers">Nessuna toppa attiva.</div></div>
+        
+        <div id="cloneConfirmBox" style="display:none; margin-top: 15px; border-top: 2px dashed #334155; padding-top: 15px;">
+             <div style="font-size: 1rem; color: var(--success); font-weight: bold; margin-bottom: 10px;" id="editTitle">✨ Modifica Toppa</div>
+             <div class="fx-grid" style="margin: 10px 0;">
+                 <label class="span-2">Sfumatura Bordi <span id="valFeather" style="float:right; color:white;">15px</span><input type="range" id="fxFeather" min="0" max="50" value="15"></label>
                  <label>Luminosità:<input type="range" id="fxBr" min="50" max="150" value="100"></label>
                  <label>Contrasto:<input type="range" id="fxCt" min="50" max="150" value="100"></label>
+                 <label>Opacità:<input type="range" id="fxOp" min="0" max="100" value="100"></label>
              </div>
-             <button class="btn btn-primary" id="btnApplyClone">✅ Conferma Toppa</button>
+             <div style="display: flex; gap: 10px; margin-top: 15px;"><button class="btn btn-green" id="btnApplyClone" style="flex: 2;">✅ Conferma</button><button class="btn btn-outline" id="btnCancelClone" style="flex: 1;">Annulla</button></div>
         </div>
     </div>
 
     <div class="panel-section" id="panelText" onclick="setMode('text')">
-        <h3>Inserimento Testo</h3>
-        <div style="display:flex; gap:10px; margin-bottom: 10px;">
-             <button class="btn btn-warn" id="btnDrawOCR" style="flex:1;">📐 Area OCR</button>
-             <button class="btn btn-primary" id="btnAddTextLayer" style="flex:1;">➕ Testo</button>
+        <h3>FASE 2: Inserimento Testo</h3>
+        <div style="display:flex; gap:10px; margin-bottom: 15px;">
+             <button class="btn btn-warn" id="btnDrawOCR" style="flex:1;">📐 Disegna Area OCR</button>
+             <button class="btn btn-primary" id="btnAddTextLayer" style="flex:1;">➕ Testo Libero</button>
         </div>
-        <div class="layer-list" id="textLayerList"></div>
+
+        <div class="layer-list" id="textLayerList" style="margin-bottom: 15px;"><div class="no-layers">Nessun livello di testo.</div></div>
         
-        <div id="textControls" style="display:none; margin-top:10px;">
-             <textarea id="overlayText" placeholder="Testo..."></textarea>
-             <div class="fx-grid">
-                 <label style="grid-column: span 2;">Carattere (Font):
+        <div id="textControls" style="display:none; border-top: 1px solid var(--panel-light); padding-top: 15px;">
+             <textarea id="overlayText" placeholder="Scrivi il testo qui..."></textarea>
+             
+             <div class="fx-grid" style="margin-top: 12px; padding: 10px; gap: 10px;">
+                 <label style="grid-column: span 2;">Font Dispositivo:
                      <select id="fontStyle">
                          <optgroup label="Android (Roboto)">
                              <option value="300|'Roboto'">Roboto Light</option>
@@ -117,219 +204,649 @@
                              <option value="700|'Roboto'">Roboto Bold</option>
                          </optgroup>
                          <optgroup label="Apple (SF Pro)">
-                             <option value="300|var(--font-apple-text)">SF Pro Text Light</option>
-                             <option value="400|var(--font-apple-text)">SF Pro Text Regular</option>
-                             <option value="500|var(--font-apple-text)">SF Pro Text Medium</option>
-                             <option value="600|var(--font-apple-text)">SF Pro Text Semibold</option>
-                             <option value="600|var(--font-apple-display)">SF Pro Display Semibold</option>
+                             <option value="300|'SF Pro Text'">SF Pro Text Light</option>
+                             <option value="400|'SF Pro Text'">SF Pro Text Regular</option>
+                             <option value="500|'SF Pro Text'">SF Pro Text Medium</option>
+                             <option value="600|'SF Pro Text'">SF Pro Text Semibold</option>
+                             <option value="600|'SF Pro Display'">SF Pro Display Semibold</option>
+                         </optgroup>
+                         <optgroup label="Font Standard">
+                             <option value="400|sans-serif">Standard (Arial)</option>
+                             <option value="400|monospace">Tecnico (Courier)</option>
                          </optgroup>
                      </select>
                  </label>
-                 <label>Size: <input type="number" id="fontSize" value="45"></label>
-                 <label>Bordo: <input type="number" id="textStroke" value="2"></label>
+                 <label>Size: <input type="number" id="fontSize" value="42" min="10"></label>
+                 <label>Bordo: <input type="number" id="textStroke" value="3" min="0" max="10"></label>
+             </div>
+             
+             <label style="margin-top:15px; color:var(--acc);">Sposta Testo (Frecce o Trascina):</label>
+             <div class="precision-controls">
+                 <span style="color:#94a3b8; font-size:0.8rem; width:20px;">X:</span>
+                 <input type="number" id="posX" value="0" style="width: 80px; padding:8px;"><div class="nudge-pad"><button class="nudge-btn" onclick="nudgeT('x', -10)">←←</button><button class="nudge-btn" onclick="nudgeT('x', -1)">←</button><button class="nudge-btn" onclick="nudgeT('x', 1)">→</button><button class="nudge-btn" onclick="nudgeT('x', 10)">→→</button></div>
+             </div>
+             <div class="precision-controls">
+                 <span style="color:#94a3b8; font-size:0.8rem; width:20px;">Y:</span>
+                 <input type="number" id="posY" value="0" style="width: 80px; padding:8px;"><div class="nudge-pad"><button class="nudge-btn" onclick="nudgeT('y', -10)">↑↑</button><button class="nudge-btn" onclick="nudgeT('y', -1)">↑</button><button class="nudge-btn" onclick="nudgeT('y', 1)">↓</button><button class="nudge-btn" onclick="nudgeT('y', 10)">↓↓</button></div>
              </div>
         </div>
     </div>
 
-    <div class="panel-section">
-        <h3>GPS & Salvataggio</h3>
-        <input type="text" id="addressInput" placeholder="Cerca indirizzo..." style="margin-bottom:8px;">
-        <button class="btn btn-warn" id="btnGeocode">📍 Trova e Centra</button>
-        <div style="display:flex; gap:5px; margin-top:8px;">
-            <input type="number" id="exifLat" placeholder="Lat" step="0.000001">
-            <input type="number" id="exifLon" placeholder="Lon" step="0.000001">
+    <div class="panel-section" style="margin-top: auto;">
+        <h3>FASE 3: GPS e Salvataggio</h3>
+        
+        <label>Cerca Indirizzo o Incolla Link Maps:</label>
+        <div style="display:flex; gap:10px; margin-bottom: 15px; margin-top:5px;">
+            <input type="text" id="addressInput" placeholder="Via Roma 1, Milano..." style="flex: 2;">
+            <button class="btn btn-warn" id="btnGeocode" style="flex: 1;">📍 Trova</button>
         </div>
+
+        <div style="display:flex; gap:10px;">
+            <label style="flex:1">Latitudine:<input type="number" id="exifLat" step="0.000001"></label>
+            <label style="flex:1">Longitudine:<input type="number" id="exifLon" step="0.000001"></label>
+        </div>
+        
         <div id="miniMap"></div>
-        <button class="btn btn-primary" id="btnDownload" style="margin-top:15px;">💾 SALVA IMMAGINE</button>
+        <p id="mapHint" style="font-size: 0.85rem; color: #10b981; text-align: center; display: none; margin: 10px 0; font-weight:bold;">Trascina il cursore blu sulla mappa!</p>
+        
+        <div style="display:flex; gap:10px; margin-top:15px;">
+            <button class="btn btn-outline" id="btnTestMaps" style="flex:1;">🗺️ Verifica</button>
+            <button class="btn btn-outline" id="btnPasteToText" style="flex:1; border-color:var(--acc); color:var(--acc);">✍️ In Testo</button>
+        </div>
+
+        <button class="btn btn-primary" id="btnDownload" style="margin-top: 20px; font-size:1.1rem; padding:15px;">💾 SALVA FOTO DEFINITIVA</button>
     </div>
 </div>
 
 <div class="main">
     <div id="canvasContainer">
         <canvas id="editorCanvas"></canvas>
+        <div id="eraserCursor"></div>
     </div>
 </div>
 
 <script>
-    // Configurazione Base e Canvas
-    const canvas = document.getElementById('editorCanvas');
-    const ctx = canvas.getContext('2d');
-    let baseImage = null;
-    let patchLayers = [];
-    let textLayers = [];
-    let currentTool = 'patch';
-    let currentMode = 'patch';
-    let editingPatchIndex = -1;
-    let selectedTextIndex = -1;
-    let isMouseDown = false;
-    let startX, startY;
+    // ==========================================
+    // TRADUTTORE TOUCH
+    // ==========================================
+    function touchHandler(event) {
+        var touches = event.changedTouches, first = touches[0], type = "";
+        switch(event.type) {
+            case "touchstart": type = "mousedown"; break;
+            case "touchmove":  type = "mousemove"; break;
+            case "touchend":   type = "mouseup"; break;
+            default: return;
+        }
+        var simulatedEvent = new MouseEvent(type, {
+            bubbles: true, cancelable: true, view: window, detail: 1,
+            screenX: first.screenX, screenY: first.screenY, clientX: first.clientX, clientY: first.clientY
+        });
+        first.target.dispatchEvent(simulatedEvent);
+        if(event.target.tagName.toLowerCase() === 'canvas') { event.preventDefault(); }
+    }
+    const canvasEl = document.getElementById('editorCanvas');
+    canvasEl.addEventListener("touchstart", touchHandler, {passive: false});
+    canvasEl.addEventListener("touchmove", touchHandler, {passive: false});
+    canvasEl.addEventListener("touchend", touchHandler, {passive: false});
 
-    // Caricamento Immagine
-    document.getElementById('upload').addEventListener('change', (e) => {
-        const file = e.target.files[0];
+    const canvas = canvasEl; 
+    const ctx = canvas.getContext('2d');
+    const container = document.getElementById('canvasContainer');
+    let eraserCanvas = document.createElement('canvas'); 
+    let eCtx = eraserCanvas.getContext('2d');
+
+    let baseImage = null, originalDataUrl = null;
+    let currentTool = 'patch'; 
+    let currentMode = 'patch'; 
+
+    let patchLayers = []; let editingPatchIndex = -1;
+    let cloneState = { active: false, stage: 0, target: {x:0,y:0,w:0,h:0} };
+    
+    let textLayers = []; let selectedTextIndex = -1;
+    let isDraggingText = false; let dragOffsetX = 0; let dragOffsetY = 0;
+    
+    let ocrState = { active: false, x:0, y:0, w:0, h:0 };
+    let eraserState = { size: 40, tolWhite: 180, expand: 4 };
+    let chamState = { stage: 0, target: {x:0,y:0,w:0,h:0} };
+
+    let isMouseDown = false; let startX = 0, startY = 0;
+    let theMap = null; let mapMarker = null;
+
+    const ui = {
+        upload: document.getElementById('upload'), zoomSlider: document.getElementById('zoomSlider'), valZoom: document.getElementById('valZoom'),
+        toolPatch: document.getElementById('toolPatch'), toolEraser: document.getElementById('toolEraser'), toolChameleon: document.getElementById('toolChameleon'),
+        panelPatchUI: document.getElementById('panelPatchUI'), panelEraser: document.getElementById('panelEraser'), panelChameleon: document.getElementById('panelChameleon'), panelText: document.getElementById('panelText'),
+        cloneConfirm: document.getElementById('cloneConfirmBox'), editTitle: document.getElementById('editTitle'), btnApplyClone: document.getElementById('btnApplyClone'), btnCancelClone: document.getElementById('btnCancelClone'), patchLayerList: document.getElementById('patchLayerList'),
+        fxOp: document.getElementById('fxOp'), fxBr: document.getElementById('fxBr'), fxCt: document.getElementById('fxCt'), fxFeather: document.getElementById('fxFeather'), valFeather: document.getElementById('valFeather'),
+        chamDirection: document.getElementById('chamDirection'),
+        brushSize: document.getElementById('brushSize'), tolWhite: document.getElementById('tolWhite'), expandOutline: document.getElementById('expandOutline'),
+        valBrushSize: document.getElementById('valBrushSize'), valTolWhite: document.getElementById('valTolWhite'), valExpand: document.getElementById('valExpand'),
+        btnClearEraser: document.getElementById('btnClearEraser'), eraserCursor: document.getElementById('eraserCursor'),
+        textLayerList: document.getElementById('textLayerList'), textControls: document.getElementById('textControls'), btnAddTextLayer: document.getElementById('btnAddTextLayer'), btnDrawOCR: document.getElementById('btnDrawOCR'), 
+        overlayText: document.getElementById('overlayText'), fontSize: document.getElementById('fontSize'), fontStyle: document.getElementById('fontStyle'), textStroke: document.getElementById('textStroke'),
+        posX: document.getElementById('posX'), posY: document.getElementById('posY'), 
+        addressInput: document.getElementById('addressInput'), btnGeocode: document.getElementById('btnGeocode'),
+        download: document.getElementById('btnDownload'), exifLat: document.getElementById('exifLat'), exifLon: document.getElementById('exifLon'),
+        btnTestMaps: document.getElementById('btnTestMaps'), btnPasteToText: document.getElementById('btnPasteToText'),
+        miniMap: document.getElementById('miniMap'), mapHint: document.getElementById('mapHint')
+    };
+
+    ui.btnDrawOCR.addEventListener('click', () => { setTool('ocr'); });
+
+    ui.upload.addEventListener('click', function() { this.value = null; });
+    ui.upload.addEventListener('change', (e) => {
+        const file = e.target.files[0]; if (!file) return;
         const reader = new FileReader();
-        reader.onload = (ev) => {
-            baseImage = new Image();
+        reader.onload = (event) => {
+            originalDataUrl = event.target.result; baseImage = new Image();
             baseImage.onload = () => {
-                canvas.width = baseImage.width;
-                canvas.height = baseImage.height;
-                fitCanvas();
-                redraw();
-            };
-            baseImage.src = ev.target.result;
-        };
+                canvas.width = baseImage.width; canvas.height = baseImage.height;
+                eraserCanvas.width = canvas.width; eraserCanvas.height = canvas.height; eCtx.clearRect(0,0,canvas.width,canvas.height); 
+                patchLayers = []; textLayers = []; editingPatchIndex = -1; selectedTextIndex = -1; 
+                cloneState.active = false; ui.cloneConfirm.style.display = 'none';
+                
+                const rect = container.getBoundingClientRect(); const scale = Math.min((rect.width-20)/baseImage.width, (rect.height-20)/baseImage.height, 1); 
+                let initialZoom = Math.max(10, Math.round(scale * 100));
+                ui.zoomSlider.value = initialZoom; ui.valZoom.innerText = initialZoom + '%';
+                canvas.style.width = (baseImage.width*(initialZoom/100))+'px'; canvas.style.height = (baseImage.height*(initialZoom/100))+'px';
+                
+                renderPatchLayers(); renderTextLayers(); redrawCanvas(); setMode('patch');
+            }
+            baseImage.src = originalDataUrl;
+        }
         reader.readAsDataURL(file);
     });
 
-    function fitCanvas() {
-        const zoom = document.getElementById('zoomSlider').value / 100;
-        canvas.style.width = (canvas.width * zoom) + 'px';
-        canvas.style.height = (canvas.height * zoom) + 'px';
-    }
-
-    document.getElementById('zoomSlider').addEventListener('input', fitCanvas);
-
-    // Gestione Testo
-    document.getElementById('btnAddTextLayer').addEventListener('click', () => {
-        textLayers.push({
-            content: "NUOVO TESTO",
-            x: canvas.width / 4,
-            y: canvas.height / 4,
-            size: 45,
-            font: "400|'Roboto'",
-            stroke: 2,
-            visible: true
-        });
-        selectedTextIndex = textLayers.length - 1;
-        setMode('text');
-        updateUI();
-        redraw();
+    ui.zoomSlider.addEventListener('input', (e) => {
+        const scale = e.target.value / 100; ui.valZoom.innerText = e.target.value + '%';
+        if (baseImage) { canvas.style.width = (baseImage.width * scale) + 'px'; canvas.style.height = (baseImage.height * scale) + 'px'; }
+        updateCursorVisual(null);
     });
 
-    function redraw() {
+    function setTool(tool) {
+        if(cloneState.active && editingPatchIndex === -1 && tool !== 'patch') return alert("Conferma o annulla la toppa attiva.");
+        currentTool = tool;
+        
+        ui.toolPatch.classList.toggle('active-patch', tool === 'patch'); 
+        ui.toolEraser.classList.toggle('active-eraser', tool === 'eraser');
+        ui.toolChameleon.classList.toggle('active-chameleon', tool === 'chameleon');
+        
+        ui.panelPatchUI.style.display = (tool === 'patch' || tool === 'chameleon') ? 'block' : 'none'; 
+        ui.panelEraser.style.display = tool === 'eraser' ? 'block' : 'none';
+        ui.panelChameleon.style.display = tool === 'chameleon' ? 'block' : 'none';
+        
+        if (tool === 'patch' || tool === 'chameleon' || tool === 'ocr') canvas.style.cursor = 'crosshair';
+        else if (tool === 'eraser') canvas.style.cursor = 'none';
+        else if (tool === 'text') canvas.style.cursor = 'move';
+        
+        ui.eraserCursor.style.display = 'none';
+        if (tool === 'ocr') ui.btnDrawOCR.innerText = "✏️ Disegna Riquadro..."; else ui.btnDrawOCR.innerText = "📐 Disegna Area OCR";
+    }
+
+    function setMode(mode) {
+        if (currentMode === mode) return; 
+        currentMode = mode;
+        ui.panelPatchUI.classList.toggle('active', mode === 'patch'); ui.panelText.classList.toggle('active', mode === 'text');
+        if (mode === 'text') { setTool('text'); if(selectedTextIndex === -1 && textLayers.length > 0) selectTextLayer(0); renderTextLayers(); } 
+        else if (mode === 'patch') { setTool('patch'); }
+    }
+
+    function redrawCanvas() {
         if (!baseImage) return;
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(baseImage, 0, 0);
+        ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.filter = 'none'; ctx.globalAlpha = 1.0;
+        
+        ctx.drawImage(baseImage, 0, 0); 
+        ctx.drawImage(eraserCanvas, 0, 0); 
+        
+        patchLayers.forEach((layer, index) => { 
+            const isEditing = (editingPatchIndex === index && cloneState.active);
+            applySmartPatch(layer, isEditing); 
+        }); 
+        
+        drawTextLayers(); 
+        
+        if(currentTool === 'patch' && cloneState.stage === 1 && isMouseDown) {
+             ctx.lineWidth = 2; ctx.strokeStyle = "#ef4444"; ctx.setLineDash([5, 5]);
+             ctx.strokeRect(cloneState.target.x, cloneState.target.y, cloneState.target.w, cloneState.target.h); ctx.setLineDash([]);
+        }
+        
+        if(currentTool === 'chameleon' && chamState.stage === 1 && isMouseDown) {
+             ctx.lineWidth = 2; ctx.strokeStyle = "#f59e0b"; ctx.setLineDash([6, 6]); 
+             ctx.strokeRect(chamState.target.x, chamState.target.y, chamState.target.w, chamState.target.h); ctx.setLineDash([]);
+        }
 
-        // Disegna Toppe
-        patchLayers.forEach((l, i) => {
-            ctx.save();
-            if (l.filters.feather > 0) {
-                ctx.filter = `blur(${l.filters.feather / 2}px) brightness(${l.filters.br}%) contrast(${l.filters.ct}%)`;
-            }
-            ctx.drawImage(canvas, l.source.x, l.source.y, l.target.w, l.target.h, l.target.x, l.target.y, l.target.w, l.target.h);
-            ctx.restore();
-            if (editingPatchIndex === i) {
-                ctx.strokeStyle = "red"; ctx.lineWidth = 4;
-                ctx.strokeRect(l.target.x, l.target.y, l.target.w, l.target.h);
-            }
-        });
+        if(currentTool === 'ocr' && ocrState.active && isMouseDown) {
+             ctx.lineWidth = 2; ctx.strokeStyle = "#eab308"; ctx.setLineDash([6, 6]);
+             ctx.strokeRect(ocrState.x, ocrState.y, ocrState.w, ocrState.h); ctx.setLineDash([]);
+             ctx.fillStyle = "rgba(234, 179, 8, 0.2)"; ctx.fillRect(ocrState.x, ocrState.y, ocrState.w, ocrState.h);
+        }
+    }
 
-        // Disegna Testi con Font Dinamici
-        textLayers.forEach((l, i) => {
+    function applySmartPatch(layer, isEditing) {
+        const tx = layer.target.x, ty = layer.target.y, w = layer.target.w, h = layer.target.h;
+        const sx = layer.source.x, sy = layer.source.y, f = layer.filters;
+        if (w <= 0 || h <= 0) return;
+
+        const tCvs = document.createElement('canvas'); tCvs.width = w; tCvs.height = h; const tCtx = tCvs.getContext('2d');
+        tCtx.filter = `brightness(${f.br}%) contrast(${f.ct}%)`; 
+        try { tCtx.drawImage(canvas, sx, sy, w, h, 0, 0, w, h); } catch(e) {} 
+        tCtx.filter = 'none';
+
+        if (f.feather > 0) {
+            const mCvs = document.createElement('canvas'); mCvs.width = w; mCvs.height = h; const mCtx = mCvs.getContext('2d');
+            mCtx.fillStyle = 'black'; mCtx.shadowColor = 'black'; mCtx.shadowBlur = f.feather; 
+            const ft = Math.min(f.feather, w/2.2, h/2.2); mCtx.fillRect(ft, ft, w - ft*2, h - ft*2); 
+            tCtx.globalCompositeOperation = 'destination-in'; tCtx.drawImage(mCvs, 0, 0); tCtx.globalCompositeOperation = 'source-over';
+        }
+
+        ctx.globalAlpha = f.op / 100; ctx.drawImage(tCvs, tx, ty); ctx.globalAlpha = 1.0;
+
+        if(isEditing) { 
+            ctx.lineWidth = 2; ctx.strokeStyle = "#ef4444"; ctx.setLineDash([5, 5]); ctx.strokeRect(tx, ty, w, h); 
+            ctx.strokeStyle = "#10b981"; ctx.setLineDash([]); ctx.strokeRect(sx, sy, w, h); 
+            ctx.beginPath(); ctx.moveTo(tx+w/2, ty+h/2); ctx.lineTo(sx+w/2, sy+h/2); ctx.strokeStyle = "#10b981"; ctx.stroke(); 
+        }
+    }
+
+    // ==========================================
+    // LOGICA DI RENDERING TESTO AGGIORNATA (SUPPORTA IL FONT WEIGHT)
+    // ==========================================
+    function drawTextLayers() {
+        textLayers.forEach((l) => {
             if (!l.visible) return;
-            const parts = l.font.split('|');
-            ctx.font = `${parts[0]} ${l.size}px ${parts[1]}`;
+            
+            // Separa il font weight dal font family (es. "400|'Roboto'")
+            const fontParts = l.font.split('|');
+            const fontWeight = fontParts.length > 1 ? fontParts[0] : '400';
+            const fontFamily = fontParts.length > 1 ? fontParts[1] : l.font;
+            
+            ctx.font = `${fontWeight} ${l.size}px ${fontFamily}`;
             ctx.fillStyle = "white";
             ctx.strokeStyle = "black";
             ctx.lineWidth = l.stroke;
             ctx.lineJoin = "round";
             
-            if (l.stroke > 0) ctx.strokeText(l.content, l.x, l.y);
-            ctx.fillText(l.content, l.x, l.y);
-            
-            if (selectedTextIndex === i && currentMode === 'text') {
-                ctx.strokeStyle = "#3b82f6"; ctx.setLineDash([5, 5]);
-                ctx.strokeRect(l.x - 5, l.y - l.size, ctx.measureText(l.content).width + 10, l.size + 10);
-                ctx.setLineDash([]);
-            }
+            const lines = l.content.split('\n');
+            lines.forEach((line, j) => {
+                const ly = l.y + (j * l.size * 1.15) + l.size;
+                if (l.stroke > 0) ctx.strokeText(line, l.x, ly);
+                ctx.fillText(line, l.x, ly);
+            });
         });
     }
 
-    // Eventi Mouse / Touch
-    canvas.addEventListener('mousedown', e => {
-        const rect = canvas.getBoundingClientRect();
-        const scale = canvas.width / rect.width;
-        startX = (e.clientX - rect.left) * scale;
-        startY = (e.clientY - rect.top) * scale;
-        isMouseDown = true;
-    });
-
-    canvas.addEventListener('mousemove', e => {
-        if (!isMouseDown) return;
-        const rect = canvas.getBoundingClientRect();
-        const scale = canvas.width / rect.width;
-        const currX = (e.clientX - rect.left) * scale;
-        const currY = (e.clientY - rect.top) * scale;
-
-        if (currentMode === 'text' && selectedTextIndex > -1) {
-            textLayers[selectedTextIndex].x = currX;
-            textLayers[selectedTextIndex].y = currY;
-            redraw();
-        }
-    });
-
-    canvas.addEventListener('mouseup', () => { isMouseDown = false; });
-
-    // Funzioni Utility
-    function setMode(m) {
-        currentMode = m;
-        document.getElementById('panelPatchUI').classList.toggle('active', m === 'patch');
-        document.getElementById('panelText').classList.toggle('active', m === 'text');
-        updateUI();
+    function getCanvasCoords(e) {
+        const rect = canvas.getBoundingClientRect(); const scaleX = canvas.width / rect.width, scaleY = canvas.height / rect.height;
+        return { x: (e.clientX - rect.left) * scaleX, y: (e.clientY - rect.top) * scaleY }; 
     }
 
-    function setTool(t) { currentTool = t; redraw(); }
+    canvas.addEventListener('mousedown', (e) => {
+        if (!baseImage) return; const c = getCanvasCoords(e); isMouseDown = true; startX = c.x; startY = c.y;
 
-    function updateUI() {
-        if (currentMode === 'text' && selectedTextIndex > -1) {
-            const l = textLayers[selectedTextIndex];
-            document.getElementById('textControls').style.display = 'block';
-            document.getElementById('overlayText').value = l.content;
-            document.getElementById('fontStyle').value = l.font;
-            document.getElementById('fontSize').value = l.size;
+        if (currentTool === 'eraser') { applyMagicEraser(c.x, c.y); redrawCanvas(); } 
+        else if (currentTool === 'patch') {
+            if (editingPatchIndex !== -1 && cloneState.active) {
+                 const l = patchLayers[editingPatchIndex];
+                 if (c.x >= l.source.x && c.x <= l.source.x + l.target.w && c.y >= l.source.y && c.y <= l.source.y + l.target.h) {
+                     cloneState.stage = 3; canvas.style.cursor = 'grabbing'; return;
+                 }
+            }
+            if (cloneState.stage === 0 || cloneState.stage === 1) { cloneState.stage = 1; cloneState.target = {x: startX, y: startY, w: 0, h: 0}; }
+        } 
+        else if (currentTool === 'chameleon') {
+            chamState.stage = 1; chamState.target = {x: startX, y: startY, w: 0, h: 0};
         }
+        else if (currentTool === 'ocr') { ocrState = { active: true, x: startX, y: startY, w: 0, h: 0 }; }
+        else if (currentTool === 'text') {
+            let clickedIndex = -1;
+            for(let i=textLayers.length-1; i>=0; i--) {
+                const l = textLayers[i]; if(!l.visible) continue;
+                
+                const fontParts = l.font.split('|');
+                const fontWeight = fontParts.length > 1 ? fontParts[0] : '400';
+                const fontFamily = fontParts.length > 1 ? fontParts[1] : l.font;
+                ctx.font = `${fontWeight} ${l.size}px ${fontFamily}`;
+                
+                let maxWidth = 0; let lines = l.content.split('\n');
+                lines.forEach(line => { let w = ctx.measureText(line).width; if(w > maxWidth) maxWidth = w; });
+                let totalHeight = l.size * 1.15 * lines.length;
+                if(c.x >= l.x - 5 && c.x <= l.x + maxWidth + 5 && c.y >= l.y - 5 && c.y <= l.y + totalHeight + 5) { clickedIndex = i; break; }
+            }
+            if(clickedIndex >= 0) {
+                selectTextLayer(clickedIndex); isDraggingText = true;
+                dragOffsetX = c.x - textLayers[clickedIndex].x; dragOffsetY = c.y - textLayers[clickedIndex].y;
+                canvas.style.cursor = 'grabbing';
+            }
+        }
+    });
+
+    canvas.addEventListener('mousemove', (e) => {
+        if (currentTool === 'eraser') updateCursorVisual(e);
+        if (!isMouseDown) return; const c = getCanvasCoords(e);
         
-        const textList = document.getElementById('textLayerList');
-        textList.innerHTML = textLayers.map((l, i) => `
-            <div class="layer-item ${selectedTextIndex === i ? 'active' : ''}" onclick="selectedTextIndex=${i}; updateUI(); redraw();">
-                <span>T: ${l.content.substring(0, 10)}</span>
-                <button onclick="textLayers.splice(${i},1); redraw(); updateUI();">🗑️</button>
-            </div>
-        `).join('');
-    }
-
-    // Listener controlli testo
-    document.getElementById('overlayText').addEventListener('input', e => { if(selectedTextIndex > -1) { textLayers[selectedTextIndex].content = e.target.value; redraw(); } });
-    document.getElementById('fontStyle').addEventListener('change', e => { if(selectedTextIndex > -1) { textLayers[selectedTextIndex].font = e.target.value; redraw(); } });
-    document.getElementById('fontSize').addEventListener('input', e => { if(selectedTextIndex > -1) { textLayers[selectedTextIndex].size = e.target.value; redraw(); } });
-
-    // GPS e Mappa
-    let map = null;
-    document.getElementById('btnGeocode').addEventListener('click', async () => {
-        const addr = document.getElementById('addressInput').value;
-        const resp = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${addr}`);
-        const data = await resp.json();
-        if (data.length > 0) {
-            const lat = data[0].lat; const lon = data[0].lon;
-            document.getElementById('exifLat').value = lat;
-            document.getElementById('exifLon').value = lon;
-            document.getElementById('miniMap').style.display = 'block';
-            if (!map) map = L.map('miniMap').setView([lat, lon], 15);
-            else map.setView([lat, lon], 15);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-            L.marker([lat, lon]).addTo(map);
+        if (currentTool === 'eraser') { applyMagicEraser(c.x, c.y); redrawCanvas(); } 
+        else if (currentTool === 'patch') {
+            if (cloneState.stage === 1) { cloneState.target.w = c.x - startX; cloneState.target.h = c.y - startY; } 
+            else if (cloneState.stage === 3 && editingPatchIndex !== -1) { 
+                patchLayers[editingPatchIndex].source.x += c.x - startX; patchLayers[editingPatchIndex].source.y += c.y - startY; 
+                startX = c.x; startY = c.y; 
+            }
+            redrawCanvas();
+        } 
+        else if (currentTool === 'chameleon') {
+            if (chamState.stage === 1) { chamState.target.w = c.x - startX; chamState.target.h = c.y - startY; redrawCanvas(); }
+        }
+        else if (currentTool === 'ocr') { ocrState.w = c.x - startX; ocrState.h = c.y - startY; redrawCanvas(); }
+        else if (currentTool === 'text' && isDraggingText && selectedTextIndex >= 0) {
+             textLayers[selectedTextIndex].x = c.x - dragOffsetX; textLayers[selectedTextIndex].y = c.y - dragOffsetY; 
+             updateTextInputs(); redrawCanvas();
         }
     });
 
-    // Download
-    document.getElementById('btnDownload').addEventListener('click', () => {
-        const link = document.createElement('a');
-        link.download = 'geo_falsificato.jpg';
-        link.href = canvas.toDataURL('image/jpeg', 0.9);
-        link.click();
+    canvas.addEventListener('mouseup', (e) => {
+        if (!isMouseDown) return; isMouseDown = false; 
+        
+        if (currentTool === 'patch') {
+            canvas.style.cursor = 'crosshair';
+            if (cloneState.stage === 3) { cloneState.stage = 2; redrawCanvas(); return; } 
+
+            if (cloneState.stage === 1) {
+                if (cloneState.target.w < 0) { cloneState.target.x += cloneState.target.w; cloneState.target.w *= -1; }
+                if (cloneState.target.h < 0) { cloneState.target.y += cloneState.target.h; cloneState.target.h *= -1; }
+                
+                if (cloneState.target.w > 10 && cloneState.target.h > 10) {
+                    const newPatch = {
+                        target: { ...cloneState.target },
+                        source: { x: cloneState.target.x, y: cloneState.target.y - cloneState.target.h - 20 }, 
+                        filters: { op: 100, br: 100, ct: 100, feather: 15 }
+                    };
+                    patchLayers.push(newPatch);
+                    editPatch(patchLayers.length - 1); 
+                } else {
+                    cloneState.stage = 0; redrawCanvas();
+                }
+            }
+        } 
+        else if (currentTool === 'chameleon') {
+            if (chamState.target.w < 0) { chamState.target.x += chamState.target.w; chamState.target.w *= -1; }
+            if (chamState.target.h < 0) { chamState.target.y += chamState.target.h; chamState.target.h *= -1; }
+
+            if (chamState.target.w > 10 && chamState.target.h > 10) {
+                createChameleonPatch(chamState.target);
+            }
+            chamState.stage = 0; redrawCanvas();
+        }
+        else if (currentTool === 'ocr') {
+            if (ocrState.w < 0) { ocrState.x += ocrState.w; ocrState.w *= -1; }
+            if (ocrState.h < 0) { ocrState.y += ocrState.h; ocrState.h *= -1; }
+            if (ocrState.w > 20 && ocrState.h > 10) runDedicatedOCR(ocrState);
+            else { setTool('text'); redrawCanvas(); }
+        }
+        else if (currentTool === 'text') {
+            if (isDraggingText && selectedTextIndex >= 0) {
+                textLayers[selectedTextIndex].x = Math.round(textLayers[selectedTextIndex].x);
+                textLayers[selectedTextIndex].y = Math.round(textLayers[selectedTextIndex].y);
+                updateTextInputs(); redrawCanvas();
+            }
+            isDraggingText = false; canvas.style.cursor = 'move';
+        }
     });
 
+    canvas.addEventListener('mouseenter', () => { if(currentTool === 'eraser') ui.eraserCursor.style.display = 'block'; });
+    canvas.addEventListener('mouseleave', () => { ui.eraserCursor.style.display = 'none'; isMouseDown = false; isDraggingText = false; });
+
+    function createChameleonPatch(rect) {
+        const x = rect.x, y = rect.y, w = rect.w, h = rect.h;
+        const dir = ui.chamDirection.value;
+        let sx = x, sy = y;
+        if (dir === 'top') sy = y - h - 5;
+        else if (dir === 'bottom') sy = y + h + 5;
+        else if (dir === 'left') sx = x - w - 5;
+        else if (dir === 'right') sx = x + w + 5;
+
+        const newPatch = { target: { x, y, w, h }, source: { x: sx, y: sy }, filters: { op: 100, br: 100, ct: 100, feather: 15 } };
+        patchLayers.push(newPatch); setTool('patch'); editPatch(patchLayers.length - 1); 
+    }
+
+    function renderPatchLayers() {
+        ui.patchLayerList.innerHTML = ''; 
+        if(patchLayers.length === 0) ui.patchLayerList.innerHTML = `<div class="no-layers">Nessuna toppa. Trascina per crearne una.</div>`;
+        patchLayers.forEach((l, i) => {
+            const div = document.createElement('div'); div.className = `layer-item ${editingPatchIndex === i ? 'active' : ''}`; 
+            div.innerHTML = `<span>🩹 Toppa ${i+1}</span><div class="layer-actions"><button class="layer-btn" onclick="editPatch(${i})">✏️</button><button class="layer-btn del" onclick="deletePatch(${i})">🗑️</button></div>`; ui.patchLayerList.appendChild(div);
+        });
+    }
+
+    window.editPatch = function(i) {
+        editingPatchIndex = i; cloneState.active = true; cloneState.stage = 2; 
+        ui.cloneConfirm.style.display = 'block'; ui.editTitle.innerText = `✨ Modifica Toppa ${i+1}`; 
+        setFiltersUI(patchLayers[i].filters); renderPatchLayers(); redrawCanvas();
+    };
+    
+    window.deletePatch = function(i) { 
+        patchLayers.splice(i, 1); 
+        if(editingPatchIndex === i) { editingPatchIndex = -1; cloneState.active = false; ui.cloneConfirm.style.display = 'none'; }
+        renderPatchLayers(); redrawCanvas(); 
+    };
+
+    function updateFilters(){ 
+        if(editingPatchIndex === -1 || !cloneState.active) return;
+        patchLayers[editingPatchIndex].filters = { op: parseInt(ui.fxOp.value), br: parseInt(ui.fxBr.value), ct: parseInt(ui.fxCt.value), feather: parseInt(ui.fxFeather.value) };
+        ui.valFeather.innerText = ui.fxFeather.value + 'px'; redrawCanvas(); 
+    }
+    ['fxOp','fxBr','fxCt','fxFeather'].forEach(id=>ui[id].addEventListener('input',updateFilters));
+
+    function setFiltersUI(f){ ui.fxOp.value=f.op; ui.fxBr.value=f.br; ui.fxCt.value=f.ct; ui.fxFeather.value=f.feather; ui.valFeather.innerText=f.feather+'px'; }
+    ui.btnApplyClone.addEventListener('click',()=>{ editingPatchIndex = -1; cloneState.active = false; ui.cloneConfirm.style.display = 'none'; renderPatchLayers(); redrawCanvas(); });
+    ui.btnCancelClone.addEventListener('click', () => { editingPatchIndex = -1; cloneState.active = false; ui.cloneConfirm.style.display = 'none'; renderPatchLayers(); redrawCanvas(); });
+
+    ui.btnClearEraser.addEventListener('click', () => { if(confirm("Cancellare il lavoro della Gomma?")) { eCtx.clearRect(0,0,canvas.width,canvas.height); redrawCanvas(); }});
+
+    function updateCursorVisual(e) {
+        const scale = parseInt(ui.zoomSlider.value) / 100; const visualSize = eraserState.size * scale;
+        ui.eraserCursor.style.width = visualSize + 'px'; ui.eraserCursor.style.height = visualSize + 'px';
+        if(e) { 
+            const rect = container.getBoundingClientRect();
+            ui.eraserCursor.style.left = (e.clientX - rect.left) + 'px'; 
+            ui.eraserCursor.style.top = (e.clientY - rect.top) + 'px'; 
+            ui.eraserCursor.style.display = 'block'; 
+        }
+    }
+    ui.brushSize.addEventListener('input', (e) => { eraserState.size = parseInt(e.target.value); ui.valBrushSize.innerText = eraserState.size + 'px'; updateCursorVisual(null); });
+    ui.tolWhite.addEventListener('input', (e) => { eraserState.tolWhite = parseInt(e.target.value); ui.valTolWhite.innerText = e.target.value; });
+    ui.expandOutline.addEventListener('input', (e) => { eraserState.expand = parseInt(e.target.value); ui.valExpand.innerText = e.target.value + 'px'; });
+    
+    function applyMagicEraser(x, y) {
+        const r = Math.round(eraserState.size / 2); const size = eraserState.size; if (size <= 0) return;
+        const imgData = ctx.getImageData(x-r, y-r, size, size); const d = imgData.data;
+        const mask = new Uint8Array(size * size); const expand = eraserState.expand;
+
+        for (let i = 0; i < size * size; i++) {
+            const idx = i * 4; if (d[idx] >= eraserState.tolWhite && d[idx+1] >= eraserState.tolWhite && d[i*4+2] >= eraserState.tolWhite) mask[i] = 1;
+        }
+
+        const dilatedMask = new Uint8Array(size * size); for(let i=0; i<mask.length; i++) dilatedMask[i] = mask[i]; 
+        if (expand > 0) {
+            for (let py = 0; py < size; py++) {
+                for (let px = 0; px < size; px++) {
+                    if (mask[py * size + px] === 1) {
+                        for (let dy = -expand; dy <= expand; dy++) {
+                            for (let dx = -expand; dx <= expand; dx++) {
+                                if (dx*dx + dy*dy <= expand*expand) { 
+                                    const nx = px + dx, ny = py + dy;
+                                    if (nx >= 0 && nx < size && ny >= 0 && ny < size) dilatedMask[ny * size + nx] = 1;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        let rAvg=0, gAvg=0, bAvg=0, count=0;
+        for (let i = 0; i < size * size; i++) {
+            if (dilatedMask[i] === 0) {
+                const px = i % size, py = Math.floor(i / size);
+                if ((px-r)**2 + (py-r)**2 <= r**2) { rAvg += d[i*4]; gAvg += d[i*4+1]; bAvg += d[i*4+2]; count++; }
+            }
+        }
+        if (count === 0) return; rAvg/=count; gAvg/=count; bAvg/=count;
+        
+        const tCvs = document.createElement('canvas'); tCvs.width = size; tCvs.height = size; const tCtx = tCvs.getContext('2d');
+        const patchData = tCtx.createImageData(size, size); const pd = patchData.data;
+
+        for (let i = 0; i < size * size; i++) {
+            const px = i % size, py = Math.floor(i / size);
+            if ((px-r)**2 + (py-r)**2 <= r**2 && dilatedMask[i] === 1) {
+                const noise = (Math.random()-0.5)*20; 
+                pd[i*4] = rAvg+noise; pd[i*4+1] = gAvg+noise; pd[i*4+2] = bAvg+noise; pd[i*4+3] = 255; 
+            }
+        }
+        tCtx.putImageData(patchData, 0, 0); eCtx.drawImage(tCvs, x-r, y-r);
+    }
+
+    ui.btnAddTextLayer.addEventListener('click', () => { addTextLayer("Nuovo Testo", canvas.width/2, canvas.height/2); setMode('text'); });
+    
+    // Testo base impostato su Roboto Regular (400)
+    function addTextLayer(content, x, y) {
+        textLayers.push({ content: content, x: x, y: y, size: 42, font: "400|'Roboto'", stroke: 3, visible: true });
+        selectTextLayer(textLayers.length - 1);
+    }
+    
+    function renderTextLayers() {
+        ui.textLayerList.innerHTML = '';
+        if(textLayers.length === 0) { ui.textLayerList.innerHTML = `<div class="no-layers">Nessun livello di testo.</div>`; ui.textControls.style.display = 'none'; return; }
+        ui.textControls.style.display = 'block';
+        textLayers.forEach((l, i) => {
+            const div = document.createElement('div'); div.className = `layer-item ${selectedTextIndex === i ? 'active' : ''}`; 
+            div.onclick = (e) => { if(!e.target.classList.contains('layer-btn')) { setMode('text'); selectTextLayer(i); } };
+            const preview = l.content.substring(0, 15) + (l.content.length>15?'...':'');
+            div.innerHTML = `<span style="opacity:${l.visible?1:0.4}">T. ${preview || 'Vuoto'}</span>
+                             <div class="layer-actions">
+                                <button class="layer-btn vis" onclick="toggleTextVis(${i})">${l.visible ? '👁️' : '🙈'}</button>
+                                <button class="layer-btn del" onclick="deleteTextLayer(${i})">🗑️</button>
+                             </div>`;
+            ui.textLayerList.appendChild(div);
+        });
+    }
+
+    window.toggleTextVis = function(i) { textLayers[i].visible = !textLayers[i].visible; renderTextLayers(); redrawCanvas(); };
+    window.deleteTextLayer = function(i) { textLayers.splice(i, 1); selectedTextIndex = -1; renderTextLayers(); redrawCanvas(); };
+
+    function selectTextLayer(index) {
+        selectedTextIndex = index; const l = textLayers[index];
+        ui.overlayText.value = l.content; ui.fontSize.value = l.size; ui.fontStyle.value = l.font; ui.textStroke.value = l.stroke;
+        ui.posX.value = Math.round(l.x); ui.posY.value = Math.round(l.y);
+        renderTextLayers(); redrawCanvas();
+    }
+    
+    function updateTextInputs() {
+        if(selectedTextIndex >= 0) { ui.posX.value = Math.round(textLayers[selectedTextIndex].x); ui.posY.value = Math.round(textLayers[selectedTextIndex].y); }
+    }
+
+    ui.overlayText.addEventListener('input',(e)=>{if(selectedTextIndex>=0)textLayers[selectedTextIndex].content=e.target.value;redrawCanvas();renderTextLayers();});
+    ui.fontSize.addEventListener('input',(e)=>{if(selectedTextIndex>=0)textLayers[selectedTextIndex].size=parseInt(e.target.value);redrawCanvas();});
+    ui.fontStyle.addEventListener('change',(e)=>{if(selectedTextIndex>=0)textLayers[selectedTextIndex].font=e.target.value;redrawCanvas();renderTextLayers();});
+    ui.textStroke.addEventListener('input',(e)=>{if(selectedTextIndex>=0)textLayers[selectedTextIndex].stroke=parseInt(e.target.value);redrawCanvas();});
+    ui.posX.addEventListener('input',(e)=>{if(selectedTextIndex>=0)textLayers[selectedTextIndex].x=parseInt(e.target.value);redrawCanvas();});
+    ui.posY.addEventListener('input',(e)=>{if(selectedTextIndex>=0)textLayers[selectedTextIndex].y=parseInt(e.target.value);redrawCanvas();});
+    window.nudgeT = (ax, am) => { if(selectedTextIndex<0)return; if(ax==='x')textLayers[selectedTextIndex].x+=am; else textLayers[selectedTextIndex].y+=am; ui.posX.value=Math.round(textLayers[selectedTextIndex].x); ui.posY.value=Math.round(textLayers[selectedTextIndex].y); redrawCanvas(); };
+
+    async function runDedicatedOCR(rect) {
+        ui.btnDrawOCR.innerText = "⏳ Lettura..."; ui.btnDrawOCR.disabled = true;
+        const tCvs=document.createElement('canvas'); tCvs.width=rect.w; tCvs.height=rect.h;
+        tCvs.getContext('2d').drawImage(baseImage, rect.x, rect.y, rect.w, rect.h, 0, 0, rect.w, rect.h);
+        try { 
+            const w=await Tesseract.createWorker('ita+eng');const r=await w.recognize(tCvs); await w.terminate();
+            if(r.data.text.trim()) { addTextLayer(r.data.text.trim(), Math.round(rect.x), Math.round(rect.y)); setTool('text'); } 
+            else { alert("L'IA non ha trovato testo."); setTool('text'); }
+        } catch(e){alert("Errore OCR."); setTool('text');} 
+        ocrState.active = false; redrawCanvas(); ui.btnDrawOCR.innerText = "📐 Disegna Area OCR"; ui.btnDrawOCR.disabled = false;
+    }
+
+    function initMap(lat, lon) {
+        ui.miniMap.style.display = 'block';
+        if (!theMap) {
+            theMap = L.map('miniMap').setView([lat, lon], 18);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OSM' }).addTo(theMap);
+            mapMarker = L.marker([lat, lon], {draggable: true}).addTo(theMap);
+            mapMarker.on('dragend', function() {
+                const pos = mapMarker.getLatLng();
+                ui.exifLat.value = pos.lat.toFixed(6); ui.exifLon.value = pos.lng.toFixed(6);
+            });
+        } else { theMap.setView([lat, lon], 18); mapMarker.setLatLng([lat, lon]); }
+        setTimeout(() => { theMap.invalidateSize(); }, 300);
+    }
+    
+    function applyFoundCoords(lat, lon, msg, isWarn) {
+        ui.exifLat.value = lat.toFixed(6); ui.exifLon.value = lon.toFixed(6);
+        ui.addressInput.style.borderColor = "var(--success)"; setTimeout(() => ui.addressInput.style.borderColor = "var(--panel-light)", 2000);
+        ui.mapHint.innerText = msg; ui.mapHint.style.color = isWarn ? "#eab308" : "#10b981"; ui.mapHint.style.display = 'block';
+        initMap(lat, lon); ui.btnGeocode.innerText = "📍 Trova"; ui.btnGeocode.disabled = false;
+    }
+
+    ui.btnGeocode.addEventListener('click', async () => {
+        const inputVal = ui.addressInput.value.trim();
+        if (!inputVal) return alert("Inserisci un indirizzo, coordinate o link Maps.");
+        ui.btnGeocode.innerText = "⏳..."; ui.btnGeocode.disabled = true;
+
+        const gmapRegex = /@(-?\d+\.\d+),(-?\d+\.\d+)/; const gmapMatch = inputVal.match(gmapRegex);
+        if (gmapMatch) return applyFoundCoords(parseFloat(gmapMatch[1]), parseFloat(gmapMatch[2]), "Coordinate lette dal link! Sposta il cursore se serve.", false);
+
+        const coordRegex = /^(-?\d+\.\d+)[,\s]+(-?\d+\.\d+)$/; const coordMatch = inputVal.match(coordRegex);
+        if (coordMatch) return applyFoundCoords(parseFloat(coordMatch[1]), parseFloat(coordMatch[2]), "Coordinate lette. Sposta il cursore se serve.", false);
+
+        try {
+            let searchQ = inputVal; if(!searchQ.toLowerCase().includes('ital')) searchQ += ", Italy";
+            const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=1&q=${encodeURIComponent(searchQ)}`, { headers: { 'User-Agent': 'GeoEditor-App/1.0' }});
+            const data = await response.json();
+            if (data && data.length > 0) {
+                const hasNumber = inputVal.match(/\d/); const foundNumber = data[0].address && (data[0].address.house_number || data[0].address.street_number);
+                if (hasNumber && !foundNumber) applyFoundCoords(parseFloat(data[0].lat), parseFloat(data[0].lon), "⚠️ Civico non nel DB. Mappa centrata, sposta il cursore!", true);
+                else applyFoundCoords(parseFloat(data[0].lat), parseFloat(data[0].lon), "Trovato! Trascina il cursore per correzioni.", false);
+            } else { alert("Indirizzo non trovato."); ui.btnGeocode.innerText = "📍 Trova"; ui.btnGeocode.disabled = false; }
+        } catch (error) { alert("Errore di connessione."); ui.btnGeocode.innerText = "📍 Trova"; ui.btnGeocode.disabled = false; }
+    });
+
+    ui.btnTestMaps.addEventListener('click', () => {
+        const lat = ui.exifLat.value; const lon = ui.exifLon.value;
+        if(lat && lon) window.open(`https://www.google.com/maps/search/?api=1&query=${lat},${lon}`, '_blank');
+        else alert("Inserisci o cerca prima le coordinate!");
+    });
+
+    ui.btnPasteToText.addEventListener('click', () => {
+        const lat = ui.exifLat.value; const lon = ui.exifLon.value;
+        if(!lat || !lon) return alert("Inserisci o cerca prima le coordinate!");
+        const coordsText = `Lat ${lat}, Long ${lon}`;
+        if(selectedTextIndex >= 0) { textLayers[selectedTextIndex].content += (textLayers[selectedTextIndex].content ? '\n' : '') + coordsText; ui.overlayText.value = textLayers[selectedTextIndex].content; redrawCanvas(); } 
+        else { addTextLayer(coordsText, canvas.width/2, canvas.height/2); setMode('text'); }
+    });
+
+    function toDMS(d){const dd=Math.floor(Math.abs(d)),m=(Math.abs(d)-dd)*60,mm=Math.floor(m),ss=Math.round((m-mm)*60*10000);return[[dd,1],[mm,1],[ss,10000]];}
+    ui.download.addEventListener('click',()=>{
+        if (!baseImage) return alert("Carica foto!"); 
+        const lat=parseFloat(ui.exifLat.value),lon=parseFloat(ui.exifLon.value); 
+        
+        const tempIdx = selectedTextIndex; selectedTextIndex = -1; 
+        const tempEditPatch = editingPatchIndex; editingPatchIndex = -1; cloneState.active = false;
+        redrawCanvas();
+        
+        const jpg=canvas.toDataURL('image/jpeg',0.95); 
+        
+        selectedTextIndex = tempIdx; editingPatchIndex = tempEditPatch; 
+        if(editingPatchIndex !== -1) cloneState.active = true;
+        redrawCanvas(); 
+        
+        if(!isNaN(lat)&&!isNaN(lon)){
+            try{
+                let e={"0th":{},"Exif":{},"GPS":{},"Interop":{},"1st":{}}; try{e=piexif.load(originalDataUrl)}catch(z){}
+                e.GPS[piexif.GPSIFD.GPSVersionID] = [2, 2, 0, 0]; e.GPS[piexif.GPSIFD.GPSLatitude]=toDMS(lat);e.GPS[piexif.GPSIFD.GPSLongitude]=toDMS(lon);
+                e.GPS[piexif.GPSIFD.GPSLatitudeRef]=lat>=0?'N':'S';e.GPS[piexif.GPSIFD.GPSLongitudeRef]=lon>=0?'E':'W';
+                save(piexif.insert(piexif.dump(e),jpg),"GeoEdited_Finale.jpg");
+            }catch(x){save(jpg,"GeoEdited_Visual.jpg");}
+        } else save(jpg,"GeoEdited_NoGPS.jpg");
+    });
+    function save(d,f){const a=document.createElement('a');a.href=d;a.download=f;a.click();}
 </script>
 </body>
 </html>
